@@ -17,20 +17,30 @@ All versions and release notes: [Releases page](https://github.com/gabrielsvpinh
 ## Features
 
 - **Up to 4 accounts at once**, each with its own cookies, localStorage and login (one persistent Electron session per slot). Log in once and the account stays logged in across restarts.
-- **2×2 grid** with draggable dividers: resize every tile independently, double-click a divider to reset it.
-- **Focus mode**: expand any account to fill the window, then go back to the grid (buttons, trainer tabs or shortcuts).
+- **Choose how many to show**: 1, 2, 3 or 4 tiles from the top bar. Accounts that do not fit keep farming in the background.
+- **Resizable tiles** with draggable dividers (double-click a divider to reset) and **drag an account by its name** to swap places.
+- **Focus mode**: expand any account to fill the window, then go back to the grid.
 - **Keeps farming in the background**: throttling is disabled for the game views and the system is kept from suspending the app.
+- **Auto-recovery**: failed loads retry with backoff, frozen pages are restarted and crashed pages reload.
+- **Desktop notifications** when an account fails to load, freezes, crashes or gets signed out (click to jump to it).
+- **Per-account zoom** (50% to 150%), **online timer**, **one-click screenshot** (saved to *Pictures/PokeIdle Panel* and copied) and **rename by double-click**.
 - **Per-account settings**: nickname, enable/disable (a disabled slot uses no memory), mute, clear session (log out) and optional **proxy** (`http`, `https`, `socks4`, `socks5`; user/password supported for HTTP(S) proxies).
-- **Auto-recovery** when a game view crashes, plus a status LED per account.
-- Remembers window size, layout and settings.
 - **In-app updates**: the app checks GitHub Releases on startup and every 4 hours (or via the version badge / *Help → Check for updates…*).
+- Auto-recovery and notifications can be turned off in the **Panel** menu.
 
 ### Keyboard shortcuts
 
+Press `Ctrl/Cmd + /` or the keyboard button in the top bar to see them in the app.
+
 | Shortcut | Action |
 | --- | --- |
-| `Ctrl/Cmd + 0` | Show all accounts (grid) |
 | `Ctrl/Cmd + 1…4` | Focus account 1…4 |
+| `Ctrl/Cmd + 0` | Back to the grid |
+| `Ctrl/Cmd + =` / `Ctrl/Cmd + -` | Zoom in / out the last clicked account |
+| `Ctrl + mouse wheel` | Zoom inside a game |
+| `Ctrl/Cmd + /` | Shortcuts list |
+| Double-click a name | Rename an account |
+| Drag a name | Swap two accounts |
 
 ## First launch (unsigned builds)
 
