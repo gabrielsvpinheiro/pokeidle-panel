@@ -137,6 +137,16 @@ button { cursor: pointer; }
 .action:hover { background: #ffffff1a; border-color: var(--line); color: var(--text); }
 .action-warn { color: #ff8a8a; }
 .action:focus-visible { outline: 2px solid var(--yellow); outline-offset: 1px; }
+.action:disabled { opacity: .35; cursor: default; background: transparent; border-color: transparent; }
+.zoom-group { display: flex; align-items: center; gap: 0; padding: 0 2px; border: 1px solid var(--line); border-radius: 8px; }
+.zoom-group .action { width: 26px; }
+.zoom-level {
+  min-width: 42px; height: 24px; padding: 0 4px;
+  background: transparent; border: 0; border-radius: 4px;
+  color: var(--text); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.zoom-level:hover { background: #ffffff1a; }
+.zoom-level:focus-visible { outline: 2px solid var(--yellow); }
 .tile-hint {
   min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   padding: 2px 8px; border-radius: 999px;
@@ -145,6 +155,9 @@ button { cursor: pointer; }
 .tile { container-type: inline-size; }
 @container (max-width: 420px) {
   .tile-status { display: none; }
+}
+@container (max-width: 340px) {
+  .zoom-group { display: none; }
 }
 .icon-btn:hover { background: #ffffff14; color: var(--text); }
 

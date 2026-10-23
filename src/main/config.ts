@@ -2,7 +2,7 @@ import { app } from 'electron'
 import { readFileSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { SLOT_COUNT, type PanelConfig } from '@shared/types'
+import { SLOT_COUNT, clampZoom, type PanelConfig } from '@shared/types'
 
 export interface StoredFile {
   panel: PanelConfig
@@ -19,7 +19,8 @@ export function defaults(): StoredFile {
         name: SLOT_NAMES[i],
         enabled: i === 0,
         muted: false,
-        proxy: ''
+        proxy: '',
+        zoom: 1
       })),
       layout: { mode: 'grid', count: 4, focused: 0, colRatio: 0.5, rowRatios: [0.5, 0.5] },
       prefs: { autoReload: true, notifications: true }
@@ -40,7 +41,8 @@ function sanitize(raw: Partial<StoredFile>): StoredFile {
       name: typeof s?.name === 'string' && s.name.trim() ? s.name.trim().slice(0, 24) : slot.name,
       enabled: typeof s?.enabled === 'boolean' ? s.enabled : slot.enabled,
       muted: typeof s?.muted === 'boolean' ? s.muted : slot.muted,
-      proxy: typeof s?.proxy === 'string' ? s.proxy.trim() : ''
+      proxy: typeof s?.proxy === 'string' ? s.proxy.trim() : '',
+      zoom: typeof s?.zoom === 'number' && Number.isFinite(s.zoom) ? clampZoom(s.zoom) : 1
     }
   })
   const l = raw.panel?.layout

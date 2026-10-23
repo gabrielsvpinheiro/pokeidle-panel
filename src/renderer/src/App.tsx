@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { SLOT_COUNT, type LayoutConfig, type PanelConfig, type SlotConfig, type SlotRects, type SlotStatus, type TileCount, type UpdateState } from '@shared/types'
+import { SLOT_COUNT, clampZoom, type LayoutConfig, type PanelConfig, type SlotConfig, type SlotRects, type SlotStatus, type TileCount, type UpdateState } from '@shared/types'
 import { Ball } from './Ball'
 import { IconLayout } from './Icons'
 import { Settings } from './Settings'
@@ -56,21 +56,34 @@ export function App() {
     })
   }, [])
 
-  useEffect(
-    () =>
-      window.panel.onCommand((cmd) => {
-        if (cmd.type === 'grid') updateLayout({ mode: 'grid' })
-        else updateLayout({ mode: 'focus', focused: cmd.slot })
-      }),
-    [updateLayout]
-  )
-
   const updateSlot = useCallback((id: number, patch: Partial<Omit<SlotConfig, 'id'>>) => {
     setConfig((prev) =>
       prev ? { ...prev, slots: prev.slots.map((s) => (s.id === id ? { ...s, ...patch } : s)) } : prev
     )
     return window.panel.updateSlot(id, patch)
   }, [])
+
+  const configRef = useRef<PanelConfig | null>(null)
+  configRef.current = config
+
+  const zoomSlot = useCallback(
+    (id: number, delta: number | null) => {
+      const slot = configRef.current?.slots[id]
+      if (!slot) return
+      void updateSlot(id, { zoom: delta === null ? 1 : clampZoom(slot.zoom + delta) })
+    },
+    [updateSlot]
+  )
+
+  useEffect(
+    () =>
+      window.panel.onCommand((cmd) => {
+        if (cmd.type === 'grid') updateLayout({ mode: 'grid' })
+        else if (cmd.type === 'focus') updateLayout({ mode: 'focus', focused: cmd.slot })
+        else if (cmd.type === 'zoom') zoomSlot(cmd.slot, cmd.delta)
+      }),
+    [updateLayout, zoomSlot]
+  )
 
   const suspended = dragging || settingsFor !== null
   useEffect(() => window.panel.setSuspended(suspended), [suspended])
@@ -161,6 +174,7 @@ export function App() {
       onRestore={() => updateLayout({ mode: 'grid' })}
       onReload={() => window.panel.reloadSlot(slot.id)}
       onToggleMute={() => void updateSlot(slot.id, { muted: !slot.muted })}
+      onZoom={(delta) => zoomSlot(slot.id, delta)}
       onSettings={() => setSettingsFor(slot.id)}
       onActivate={() => void updateSlot(slot.id, { enabled: true })}
     />

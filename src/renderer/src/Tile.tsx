@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
-import type { SlotConfig, SlotStatus } from '@shared/types'
+import { ZOOM_MAX, ZOOM_MIN, ZOOM_STEP, type SlotConfig, type SlotStatus } from '@shared/types'
 import { Ball } from './Ball'
-import { IconExpand, IconGrid, IconMute, IconReload, IconSettings, IconSound } from './Icons'
+import { IconExpand, IconGrid, IconMute, IconReload, IconSettings, IconSound, IconZoomIn, IconZoomOut } from './Icons'
 
 const STATUS_LABEL: Record<SlotStatus, string> = {
   idle: 'Empty',
@@ -16,6 +16,7 @@ function ActionButton(props: {
   icon: ReactNode
   hint: string
   tone?: 'warn'
+  disabled?: boolean
   onHint: (hint: string | null) => void
   onClick: () => void
 }) {
@@ -31,6 +32,7 @@ function ActionButton(props: {
       onFocus={show}
       onBlur={hide}
       onClick={props.onClick}
+      disabled={props.disabled}
     >
       {props.icon}
     </button>
@@ -58,6 +60,7 @@ interface Props {
   onRestore: () => void
   onReload: () => void
   onToggleMute: () => void
+  onZoom: (delta: number | null) => void
   onSettings: () => void
   onActivate: () => void
 }
@@ -91,6 +94,32 @@ export function Tile(p: Props) {
               onHint={setHint}
               onClick={p.onToggleMute}
             />
+            <div className="zoom-group">
+              <ActionButton
+                icon={<IconZoomOut />}
+                hint="Zoom out this account (Ctrl/Cmd −)"
+                disabled={slot.zoom <= ZOOM_MIN}
+                onHint={setHint}
+                onClick={() => p.onZoom(-ZOOM_STEP)}
+              />
+              <button
+                className="zoom-level"
+                title="Zoom level: click to reset to 100%"
+                aria-label={`Zoom ${Math.round(slot.zoom * 100)}%, click to reset`}
+                onMouseEnter={() => setHint('Zoom level: click to reset to 100%')}
+                onMouseLeave={() => setHint(null)}
+                onClick={() => p.onZoom(null)}
+              >
+                {Math.round(slot.zoom * 100)}%
+              </button>
+              <ActionButton
+                icon={<IconZoomIn />}
+                hint="Zoom in this account (Ctrl/Cmd +)"
+                disabled={slot.zoom >= ZOOM_MAX}
+                onHint={setHint}
+                onClick={() => p.onZoom(ZOOM_STEP)}
+              />
+            </div>
             <ActionButton icon={<IconReload />} hint="Reload this account's game" onHint={setHint} onClick={p.onReload} />
           </>
         )}

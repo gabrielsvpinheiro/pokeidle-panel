@@ -31,6 +31,12 @@ export const IconSettings = () => (
     <circle cx="16" cy="6" r="2.2" /><circle cx="10" cy="12" r="2.2" /><circle cx="18" cy="18" r="2.2" />
   </svg>
 )
+export const IconZoomIn = () => (
+  <svg {...base}><circle cx="10.5" cy="10.5" r="6.5" /><path d="m20 20-4.5-4.5M8 10.5h5M10.5 8v5" /></svg>
+)
+export const IconZoomOut = () => (
+  <svg {...base}><circle cx="10.5" cy="10.5" r="6.5" /><path d="m20 20-4.5-4.5M8 10.5h5" /></svg>
+)
 export const IconDownload = () => (
   <svg {...base}><path d="M12 3v12M7 10l5 5 5-5M5 21h14" /></svg>
 )

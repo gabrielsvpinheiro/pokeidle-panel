@@ -13,6 +13,7 @@ const RETRY_MAX = 300_000
 export interface SlotHooks {
   status: (id: number, status: SlotStatus, since: number) => void
   alert: (id: number, message: string) => void
+  zoom: (id: number, delta: number) => void
 }
 
 interface Retry {
@@ -29,6 +30,7 @@ export class SlotManager {
   private appliedProxy = new Map<number, string>()
   private retries = new Map<number, Retry>()
   private seenSignedIn = new Set<number>()
+  private lastFocused: number | null = null
   private probeTimer: NodeJS.Timeout
 
   constructor(
@@ -69,8 +71,16 @@ export class SlotManager {
       else this.destroy(slot.id)
       const view = this.views.get(slot.id)
       view?.webContents.setAudioMuted(slot.muted)
+      view?.webContents.setZoomFactor(slot.zoom)
     }
     this.applyBounds()
+  }
+
+  activeSlot(): number | null {
+    const { layout, slots } = this.getConfig()
+    if (layout.mode === 'focus' && this.views.has(layout.focused)) return layout.focused
+    if (this.lastFocused !== null && this.views.has(this.lastFocused)) return this.lastFocused
+    return slots.find((s) => this.views.has(s.id))?.id ?? null
   }
 
   setRects(rects: SlotRects): void {
@@ -212,6 +222,11 @@ export class SlotManager {
     }
     wc.on('did-finish-load', settle)
     wc.on('did-stop-loading', settle)
+    wc.on('did-finish-load', () => wc.setZoomFactor(this.getConfig().slots[id].zoom))
+    wc.on('focus', () => {
+      this.lastFocused = id
+    })
+    wc.on('zoom-changed', (_e, direction) => this.hooks.zoom(id, direction === 'in' ? 0.1 : -0.1))
 
     wc.on('unresponsive', () => {
       if (hangTimer || !this.getConfig().prefs.autoReload) return

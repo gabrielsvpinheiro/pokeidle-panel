@@ -1,6 +1,6 @@
 import { app, BrowserWindow, Menu, Notification, ipcMain, powerSaveBlocker, shell, type MenuItemConstructorOptions } from 'electron'
 import { join } from 'node:path'
-import { SLOT_COUNT, type PanelCommand, type UpdateAction, type LayoutConfig, type SlotConfig, type SlotRects } from '@shared/types'
+import { SLOT_COUNT, ZOOM_STEP, type PanelCommand, type UpdateAction, type LayoutConfig, type SlotConfig, type SlotRects } from '@shared/types'
 import { flushConfig, loadConfig, saveConfig, sanitizeConfig, type StoredFile } from './config'
 import { SlotManager } from './slots'
 import { Updater } from './updater'
@@ -26,6 +26,11 @@ function send(channel: string, ...args: unknown[]): void {
 
 function command(cmd: PanelCommand): void {
   send('panel:command', cmd)
+}
+
+function zoomActive(delta: number): void {
+  const slot = slots?.activeSlot()
+  if (slot !== null && slot !== undefined) command({ type: 'zoom', slot, delta })
 }
 
 const activeNotifications = new Set<Notification>()
@@ -82,7 +87,16 @@ function buildMenu(): void {
         }
       ]
     },
-    { role: 'viewMenu' },
+    {
+      label: 'View',
+      submenu: [
+        { label: 'Zoom in account', accelerator: 'CmdOrCtrl+=', click: () => zoomActive(ZOOM_STEP) },
+        { label: 'Zoom out account', accelerator: 'CmdOrCtrl+-', click: () => zoomActive(-ZOOM_STEP) },
+        { type: 'separator' },
+        { role: 'togglefullscreen' },
+        { role: 'toggleDevTools' }
+      ]
+    },
     { role: 'windowMenu' },
     {
       role: 'help',
@@ -114,7 +128,8 @@ function createWindow(): void {
 
   slots = new SlotManager(win, () => store.panel, {
     status: (id, status, since) => send('panel:status', id, status, since),
-    alert
+    alert,
+    zoom: (slot, delta) => command({ type: 'zoom', slot, delta })
   })
 
   const saveBounds = (): void => {

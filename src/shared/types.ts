@@ -7,7 +7,15 @@ export interface SlotConfig {
   enabled: boolean
   muted: boolean
   proxy: string
+  zoom: number
 }
+
+export const ZOOM_MIN = 0.5
+export const ZOOM_MAX = 1.5
+export const ZOOM_STEP = 0.1
+
+export const clampZoom = (z: number): number =>
+  Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(z * 100) / 100))
 
 export type LayoutMode = 'grid' | 'focus'
 
@@ -46,6 +54,7 @@ export type SlotRects = Record<number, Rect | null>
 export type PanelCommand =
   | { type: 'grid' }
   | { type: 'focus'; slot: number }
+  | { type: 'zoom'; slot: number; delta: number }
 
 export type UpdateState =
   | { kind: 'idle' }
