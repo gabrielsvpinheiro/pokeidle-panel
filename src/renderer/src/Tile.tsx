@@ -35,7 +35,11 @@ export function Tile(p: Props) {
         <span className="spacer" />
         {slot.enabled && (
           <>
-            <button className="icon-btn" title={slot.muted ? 'Unmute' : 'Mute'} onClick={p.onToggleMute}>
+            <button
+              className={`icon-btn${slot.muted ? ' muted' : ''}`}
+              title={slot.muted ? 'Muted: click to unmute' : 'Sound on: click to mute'}
+              onClick={p.onToggleMute}
+            >
               {slot.muted ? <IconMute /> : <IconSound />}
             </button>
             <button className="icon-btn" title="Reload" onClick={p.onReload}><IconReload /></button>

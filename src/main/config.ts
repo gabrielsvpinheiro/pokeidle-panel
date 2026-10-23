@@ -18,7 +18,7 @@ export function defaults(): StoredFile {
         id: i,
         name: SLOT_NAMES[i],
         enabled: i === 0,
-        muted: true,
+        muted: false,
         proxy: ''
       })),
       layout: { mode: 'grid', focused: 0, colRatio: 0.5, rowRatios: [0.5, 0.5] }
