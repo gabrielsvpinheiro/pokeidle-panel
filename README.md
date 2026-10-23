@@ -23,6 +23,7 @@ All versions and release notes: [Releases page](https://github.com/gabrielsvpinh
 - **Per-account settings**: nickname, enable/disable (a disabled slot uses no memory), mute, clear session (log out) and optional **proxy** (`http`, `https`, `socks4`, `socks5`; user/password supported for HTTP(S) proxies).
 - **Auto-recovery** when a game view crashes, plus a status LED per account.
 - Remembers window size, layout and settings.
+- **In-app updates**: the app checks GitHub Releases on startup and every 4 hours (or via the version badge / *Help → Check for updates…*).
 
 ### Keyboard shortcuts
 
@@ -37,6 +38,13 @@ The installers are not code-signed yet, so the OS will warn you once:
 
 - **macOS**: open the `.dmg`, drag the app to *Applications*, then right-click the app → **Open** → **Open**. If macOS still refuses, run `xattr -dr com.apple.quarantine "/Applications/PokeIdle Panel.app"`.
 - **Windows**: SmartScreen shows "Windows protected your PC": click **More info** → **Run anyway**.
+
+## Updates
+
+- **Windows**: updates download in the background and a banner offers **Restart and update**.
+- **macOS**: the builds are not code-signed, and macOS only allows self-updating signed apps. The app shows a banner with **Download update**, which opens the right `.dmg` for your Mac; drag it over the old app. Signing and notarizing the app (Apple Developer account) would enable full auto-update here too.
+
+To publish an update, bump `version` in `package.json`, commit, and push a tag such as `v0.2.1`. The release workflow uploads the installers together with `latest.yml` / `latest-mac.yml`, which the updater reads.
 
 ## Usage
 
