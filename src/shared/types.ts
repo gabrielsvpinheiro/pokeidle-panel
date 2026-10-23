@@ -62,6 +62,7 @@ export interface PanelApi {
   getState(): Promise<{
     config: PanelConfig
     statuses: Record<number, SlotStatus>
+    since: Record<number, number>
     version: string
     update: UpdateState
   }>
@@ -73,6 +74,6 @@ export interface PanelApi {
   setSuspended(suspended: boolean): void
   reloadSlot(id: number): void
   clearSlot(id: number): Promise<void>
-  onStatus(cb: (id: number, status: SlotStatus) => void): () => void
+  onStatus(cb: (id: number, status: SlotStatus, since: number) => void): () => void
   onCommand(cb: (command: PanelCommand) => void): () => void
 }

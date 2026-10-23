@@ -15,6 +15,8 @@ type Drag = { kind: 'col' } | { kind: 'row'; column: 0 | 1 }
 export function App() {
   const [config, setConfig] = useState<PanelConfig | null>(null)
   const [statuses, setStatuses] = useState<Record<number, SlotStatus>>({})
+  const [since, setSince] = useState<Record<number, number>>({})
+  const [now, setNow] = useState(Date.now())
   const [settingsFor, setSettingsFor] = useState<number | null>(null)
   const [dragging, setDragging] = useState(false)
   const [version, setVersion] = useState('')
@@ -28,14 +30,20 @@ export function App() {
     void window.panel.getState().then((s) => {
       setConfig(s.config)
       setStatuses(s.statuses)
+      setSince(s.since)
       setVersion(s.version)
       setUpdate(s.update)
     })
-    const offStatus = window.panel.onStatus((id, status) => setStatuses((prev) => ({ ...prev, [id]: status })))
+    const offStatus = window.panel.onStatus((id, status, at) => {
+      setStatuses((prev) => ({ ...prev, [id]: status }))
+      setSince((prev) => ({ ...prev, [id]: at }))
+    })
+    const tick = setInterval(() => setNow(Date.now()), 30_000)
     const offUpdate = window.panel.onUpdate(setUpdate)
     return () => {
       offStatus()
       offUpdate()
+      clearInterval(tick)
     }
   }, [])
 
@@ -144,6 +152,7 @@ export function App() {
       key={slot.id}
       slot={slot}
       status={statuses[slot.id] ?? 'idle'}
+      onlineFor={statuses[slot.id] === 'online' && since[slot.id] ? now - since[slot.id] : null}
       focused={layout.mode === 'focus'}
       registerContent={(el) => {
         contentRefs.current[slot.id] = el

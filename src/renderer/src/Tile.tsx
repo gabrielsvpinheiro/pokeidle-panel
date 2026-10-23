@@ -37,9 +37,21 @@ function ActionButton(props: {
   )
 }
 
+export function formatDuration(ms: number): string {
+  const minutes = Math.floor(ms / 60_000)
+  if (minutes < 1) return 'just now'
+  const days = Math.floor(minutes / 1440)
+  const hours = Math.floor((minutes % 1440) / 60)
+  const mins = minutes % 60
+  if (days > 0) return `${days}d ${hours}h`
+  if (hours > 0) return `${hours}h ${mins}m`
+  return `${mins}m`
+}
+
 interface Props {
   slot: SlotConfig
   status: SlotStatus
+  onlineFor: number | null
   focused: boolean
   registerContent: (el: HTMLDivElement | null) => void
   onFocus: () => void
@@ -63,7 +75,10 @@ export function Tile(p: Props) {
         ) : (
           <>
             <span className={`led led-${status}`} title={STATUS_LABEL[status]} />
-            <span className="tile-status">{STATUS_LABEL[status]}</span>
+            <span className="tile-status" title={p.onlineFor !== null ? 'Time since this account last loaded the game' : undefined}>
+              {STATUS_LABEL[status]}
+              {p.onlineFor !== null && ` · ${formatDuration(p.onlineFor)}`}
+            </span>
           </>
         )}
         <span className="spacer" />

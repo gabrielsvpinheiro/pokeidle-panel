@@ -11,7 +11,7 @@ const RETRY_BASE = 15_000
 const RETRY_MAX = 300_000
 
 export interface SlotHooks {
-  status: (id: number, status: SlotStatus) => void
+  status: (id: number, status: SlotStatus, since: number) => void
   alert: (id: number, message: string) => void
 }
 
@@ -23,6 +23,7 @@ interface Retry {
 export class SlotManager {
   private views = new Map<number, WebContentsView>()
   private statuses: Record<number, SlotStatus> = {}
+  private since: Record<number, number> = {}
   private rects: SlotRects = {}
   private suspended = false
   private appliedProxy = new Map<number, string>()
@@ -42,6 +43,10 @@ export class SlotManager {
 
   getStatuses(): Record<number, SlotStatus> {
     return { ...this.statuses }
+  }
+
+  getSince(): Record<number, number> {
+    return { ...this.since }
   }
 
   sessionOf(id: number): Session {
@@ -105,7 +110,8 @@ export class SlotManager {
   private setStatus(id: number, status: SlotStatus): void {
     if (this.statuses[id] === status) return
     this.statuses[id] = status
-    this.hooks.status(id, status)
+    this.since[id] = Date.now()
+    this.hooks.status(id, status, this.since[id])
   }
 
   private scheduleRetry(id: number): void {

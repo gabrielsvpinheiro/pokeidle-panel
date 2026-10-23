@@ -16,7 +16,7 @@ const api: PanelApi = {
   reloadSlot: (id) => ipcRenderer.send('panel:reload', id),
   clearSlot: (id) => ipcRenderer.invoke('panel:clear', id),
   onStatus: (cb) => {
-    const handler = (_: unknown, id: number, status: SlotStatus) => cb(id, status)
+    const handler = (_: unknown, id: number, status: SlotStatus, since: number) => cb(id, status, since)
     ipcRenderer.on('panel:status', handler)
     return () => ipcRenderer.removeListener('panel:status', handler)
   },

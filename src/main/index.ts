@@ -113,7 +113,7 @@ function createWindow(): void {
   if (w.maximized) win.maximize()
 
   slots = new SlotManager(win, () => store.panel, {
-    status: (id, status) => send('panel:status', id, status),
+    status: (id, status, since) => send('panel:status', id, status, since),
     alert
   })
 
@@ -148,6 +148,7 @@ function registerIpc(): void {
   ipcMain.handle('panel:get-state', () => ({
     config: store.panel,
     statuses: slots.getStatuses(),
+    since: slots.getSince(),
     version: app.getVersion(),
     update: updater.getState()
   }))
