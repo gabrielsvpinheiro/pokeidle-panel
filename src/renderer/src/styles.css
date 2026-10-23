@@ -40,7 +40,6 @@ button { cursor: pointer; }
   -webkit-app-region: drag;
 }
 .topbar button { -webkit-app-region: no-drag; }
-body.mac .topbar { padding-left: 84px; }
 
 .brand { display: flex; align-items: center; gap: 8px; }
 .brand h1 {
