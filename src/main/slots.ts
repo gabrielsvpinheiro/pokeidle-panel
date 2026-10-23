@@ -119,12 +119,25 @@ export class SlotManager {
 
   private wire(id: number, view: WebContentsView): void {
     const wc = view.webContents
-    wc.on('did-start-loading', () => this.setStatus(id, 'loading'))
-    wc.on('did-finish-load', () => this.setStatus(id, 'online'))
-    wc.on('did-fail-load', (_e, code, _desc, _url, isMainFrame) => {
-      if (isMainFrame && code !== -3) this.setStatus(id, 'error')
+    let failed = false
+    wc.on('did-start-navigation', (details) => {
+      if (!details.isMainFrame || details.isSameDocument) return
+      failed = false
+      this.setStatus(id, 'loading')
     })
+    wc.on('did-fail-load', (_e, code, _desc, _url, isMainFrame) => {
+      if (isMainFrame && code !== -3) {
+        failed = true
+        this.setStatus(id, 'error')
+      }
+    })
+    const settle = (): void => {
+      if (!failed) this.setStatus(id, 'online')
+    }
+    wc.on('did-finish-load', settle)
+    wc.on('did-stop-loading', settle)
     wc.on('render-process-gone', () => {
+      failed = false
       this.setStatus(id, 'crashed')
       setTimeout(() => {
         if (this.views.get(id) === view && !wc.isDestroyed()) wc.reload()
