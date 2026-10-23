@@ -9,7 +9,7 @@
     "noEmit": true,
     "skipLibCheck": true,
     "isolatedModules": true,
-    "types": ["node"],
+    "types": ["node", "vite/client"],
     "paths": { "@shared/*": ["./src/shared/*"] }
   },
   "include": ["src", "electron.vite.config.ts"]

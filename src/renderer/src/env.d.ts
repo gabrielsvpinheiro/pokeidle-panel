@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import type { PanelApi } from '@shared/types'
 
 declare global {
