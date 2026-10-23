@@ -4,6 +4,11 @@ import { SLOT_COUNT, type PanelCommand, type LayoutConfig, type SlotConfig, type
 import { flushConfig, loadConfig, saveConfig, sanitizeConfig, type StoredFile } from './config'
 import { SlotManager } from './slots'
 
+const APP_NAME = 'PokeIdle Panel'
+
+app.setName(APP_NAME)
+app.setPath('userData', join(app.getPath('appData'), 'pokeidle-panel'))
+
 let store: StoredFile
 let win: BrowserWindow
 let slots: SlotManager
@@ -54,7 +59,7 @@ function createWindow(): void {
     y: w.y,
     minWidth: 900,
     minHeight: 600,
-    title: 'PokeIdle Panel',
+    title: APP_NAME,
     backgroundColor: '#12141d',
     ...(app.isPackaged ? {} : { icon: join(__dirname, '../../build/icon.png') }),
     webPreferences: {
@@ -126,6 +131,7 @@ app.on('login', (event, webContents, _details, authInfo, callback) => {
 
 app.whenReady().then(() => {
   store = loadConfig()
+  if (process.platform === 'darwin' && !app.isPackaged) app.dock?.setIcon(join(__dirname, '../../build/icon.png'))
   powerSaveBlocker.start('prevent-app-suspension')
   buildMenu()
   createWindow()
