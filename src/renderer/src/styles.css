@@ -117,7 +117,20 @@ body.mac .topbar { padding-left: 84px; }
   width: 28px; height: 28px; padding: 0;
   background: transparent; border: 0; border-radius: 6px; color: var(--muted);
 }
-.icon-btn.muted { color: #ff7b7b; }
+.action {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 28px; padding: 0 10px;
+  background: #ffffff0d; border: 1px solid transparent; border-radius: 6px;
+  color: var(--text); font-size: 12px; font-weight: 600; white-space: nowrap;
+}
+.action:hover { background: #ffffff1f; border-color: var(--line); }
+.action-warn { color: #ff9b9b; background: #ff4d4d1a; }
+.action:focus-visible { outline: 2px solid var(--yellow); outline-offset: 1px; }
+.tile { container-type: inline-size; }
+@container (max-width: 560px) {
+  .action-label, .tile-status { display: none; }
+  .action { padding: 0 8px; }
+}
 .icon-btn:hover { background: #ffffff14; color: var(--text); }
 
 .empty {

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { SlotConfig, SlotStatus } from '@shared/types'
 import { Ball } from './Ball'
 import { IconExpand, IconGrid, IconMute, IconReload, IconSettings, IconSound } from './Icons'
@@ -8,6 +9,26 @@ const STATUS_LABEL: Record<SlotStatus, string> = {
   online: 'Online',
   error: 'Load failed',
   crashed: 'Recovering'
+}
+
+function ActionButton(props: {
+  icon: ReactNode
+  label: string
+  hint: string
+  tone?: 'warn'
+  onClick: () => void
+}) {
+  return (
+    <button
+      className={`action${props.tone ? ` action-${props.tone}` : ''}`}
+      title={props.hint}
+      aria-label={`${props.label}: ${props.hint}`}
+      onClick={props.onClick}
+    >
+      {props.icon}
+      <span className="action-label">{props.label}</span>
+    </button>
+  )
 }
 
 interface Props {
@@ -35,24 +56,23 @@ export function Tile(p: Props) {
         <span className="spacer" />
         {slot.enabled && (
           <>
-            <button
-              className={`icon-btn${slot.muted ? ' muted' : ''}`}
-              title={slot.muted ? 'Muted: click to unmute' : 'Sound on: click to mute'}
+            <ActionButton
+              icon={slot.muted ? <IconMute /> : <IconSound />}
+              label={slot.muted ? 'Muted' : 'Sound on'}
+              hint={slot.muted ? 'Audio is muted. Click to turn the sound on.' : 'Audio is playing. Click to mute this account.'}
+              tone={slot.muted ? 'warn' : undefined}
               onClick={p.onToggleMute}
-            >
-              {slot.muted ? <IconMute /> : <IconSound />}
-            </button>
-            <button className="icon-btn" title="Reload" onClick={p.onReload}><IconReload /></button>
+            />
+            <ActionButton icon={<IconReload />} label="Reload" hint="Reload the game page for this account" onClick={p.onReload} />
           </>
         )}
-        <button className="icon-btn" title="Settings" onClick={p.onSettings}><IconSettings /></button>
-        <button
-          className="icon-btn"
-          title={p.focused ? 'Back to grid' : 'Focus this account'}
+        <ActionButton icon={<IconSettings />} label="Settings" hint="Nickname, proxy, mute and log out" onClick={p.onSettings} />
+        <ActionButton
+          icon={p.focused ? <IconGrid /> : <IconExpand />}
+          label={p.focused ? 'Show all' : 'Expand'}
+          hint={p.focused ? 'Go back to the grid with all accounts' : 'Fill the window with this account'}
           onClick={p.focused ? p.onRestore : p.onFocus}
-        >
-          {p.focused ? <IconGrid /> : <IconExpand />}
-        </button>
+        />
       </div>
       <div className="tile-body" ref={slot.enabled ? p.registerContent : undefined}>
         {!slot.enabled && (

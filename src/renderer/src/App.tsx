@@ -179,7 +179,7 @@ export function App() {
             title="Show all accounts (Ctrl/Cmd+0)"
           >
             <IconGrid />
-            <span>All</span>
+            <span>All accounts</span>
           </button>
           {slots.map((s) => (
             <button
