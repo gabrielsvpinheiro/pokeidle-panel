@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import type { SlotConfig, SlotStatus } from '@shared/types'
 import { Ball } from './Ball'
 import { IconExpand, IconGrid, IconMute, IconReload, IconSettings, IconSound } from './Icons'
@@ -13,20 +13,25 @@ const STATUS_LABEL: Record<SlotStatus, string> = {
 
 function ActionButton(props: {
   icon: ReactNode
-  label: string
   hint: string
   tone?: 'warn'
+  onHint: (hint: string | null) => void
   onClick: () => void
 }) {
+  const show = () => props.onHint(props.hint)
+  const hide = () => props.onHint(null)
   return (
     <button
       className={`action${props.tone ? ` action-${props.tone}` : ''}`}
       title={props.hint}
-      aria-label={`${props.label}: ${props.hint}`}
+      aria-label={props.hint}
+      onMouseEnter={show}
+      onMouseLeave={hide}
+      onFocus={show}
+      onBlur={hide}
       onClick={props.onClick}
     >
       {props.icon}
-      <span className="action-label">{props.label}</span>
     </button>
   )
 }
@@ -46,31 +51,38 @@ interface Props {
 
 export function Tile(p: Props) {
   const { slot, status } = p
+  const [hint, setHint] = useState<string | null>(null)
   return (
     <section className={`tile${slot.enabled ? '' : ' tile-empty'}`} aria-label={slot.name}>
       <div className="tile-bar">
         <Ball slot={slot.id} size={22} dim={!slot.enabled} />
         <span className="tile-name" title={slot.name}>{slot.name}</span>
-        <span className={`led led-${status}`} title={STATUS_LABEL[status]} />
-        <span className="tile-status">{STATUS_LABEL[status]}</span>
+        {hint ? (
+          <span className="tile-hint" aria-hidden>{hint}</span>
+        ) : (
+          <>
+            <span className={`led led-${status}`} title={STATUS_LABEL[status]} />
+            <span className="tile-status">{STATUS_LABEL[status]}</span>
+          </>
+        )}
         <span className="spacer" />
         {slot.enabled && (
           <>
             <ActionButton
               icon={slot.muted ? <IconMute /> : <IconSound />}
-              label={slot.muted ? 'Muted' : 'Sound on'}
-              hint={slot.muted ? 'Audio is muted. Click to turn the sound on.' : 'Audio is playing. Click to mute this account.'}
+              hint={slot.muted ? 'Muted: click to turn the sound on' : 'Sound on: click to mute'}
               tone={slot.muted ? 'warn' : undefined}
+              onHint={setHint}
               onClick={p.onToggleMute}
             />
-            <ActionButton icon={<IconReload />} label="Reload" hint="Reload the game page for this account" onClick={p.onReload} />
+            <ActionButton icon={<IconReload />} hint="Reload this account's game" onHint={setHint} onClick={p.onReload} />
           </>
         )}
-        <ActionButton icon={<IconSettings />} label="Settings" hint="Nickname, proxy, mute and log out" onClick={p.onSettings} />
+        <ActionButton icon={<IconSettings />} hint="Settings: nickname, proxy, log out" onHint={setHint} onClick={p.onSettings} />
         <ActionButton
           icon={p.focused ? <IconGrid /> : <IconExpand />}
-          label={p.focused ? 'Show all' : 'Expand'}
-          hint={p.focused ? 'Go back to the grid with all accounts' : 'Fill the window with this account'}
+          hint={p.focused ? 'Back to all accounts' : 'Expand to fill the window'}
+          onHint={setHint}
           onClick={p.focused ? p.onRestore : p.onFocus}
         />
       </div>
