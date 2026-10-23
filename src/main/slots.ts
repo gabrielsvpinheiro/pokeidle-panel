@@ -225,7 +225,7 @@ export class SlotManager {
       if (failed || this.statuses[id] === 'signedout') return
       this.setStatus(id, 'online')
       this.clearRetry(id)
-      setTimeout(() => void this.probe(id), 3000)
+      for (const delay of [3000, 12_000]) setTimeout(() => void this.probe(id), delay)
     }
     wc.on('did-finish-load', settle)
     wc.on('did-stop-loading', settle)
