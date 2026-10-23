@@ -17,6 +17,7 @@ export function App() {
   const [statuses, setStatuses] = useState<Record<number, SlotStatus>>({})
   const [since, setSince] = useState<Record<number, number>>({})
   const [now, setNow] = useState(Date.now())
+  const [moving, setMoving] = useState<{ id: number; over: number | null } | null>(null)
   const [settingsFor, setSettingsFor] = useState<number | null>(null)
   const [dragging, setDragging] = useState(false)
   const [version, setVersion] = useState('')
@@ -85,7 +86,7 @@ export function App() {
     [updateLayout, zoomSlot]
   )
 
-  const suspended = dragging || settingsFor !== null
+  const suspended = dragging || settingsFor !== null || moving !== null
   useEffect(() => window.panel.setSuspended(suspended), [suspended])
 
   const report = useCallback(() => {
@@ -149,6 +150,40 @@ export function App() {
     target.addEventListener('pointercancel', up)
   }
 
+  const beginMove = (id: number) => (e: React.PointerEvent<HTMLElement>) => {
+    if (e.button !== 0) return
+    const grip = e.currentTarget
+    grip.setPointerCapture(e.pointerId)
+    const startX = e.clientX
+    const startY = e.clientY
+    let active = false
+    let over: number | null = null
+
+    const move = (ev: PointerEvent) => {
+      if (!active && Math.hypot(ev.clientX - startX, ev.clientY - startY) < 6) return
+      active = true
+      const target = document.elementFromPoint(ev.clientX, ev.clientY)?.closest<HTMLElement>('[data-slot]')
+      over = target ? Number(target.dataset.slot) : null
+      setMoving({ id, over })
+    }
+    const up = () => {
+      grip.removeEventListener('pointermove', move)
+      grip.removeEventListener('pointerup', up)
+      grip.removeEventListener('pointercancel', up)
+      setMoving(null)
+      const current = configRef.current
+      if (!active || over === null || over === id || !current) return
+      const order = [...current.layout.order]
+      const a = order.indexOf(id)
+      const b = order.indexOf(over)
+      ;[order[a], order[b]] = [order[b], order[a]]
+      updateLayout({ order })
+    }
+    grip.addEventListener('pointermove', move)
+    grip.addEventListener('pointerup', up)
+    grip.addEventListener('pointercancel', up)
+  }
+
   const resetCol = () => updateLayout({ colRatio: 0.5 })
   const resetRow = (column: 0 | 1) => () => {
     if (!config) return
@@ -175,6 +210,8 @@ export function App() {
       onReload={() => window.panel.reloadSlot(slot.id)}
       onToggleMute={() => void updateSlot(slot.id, { muted: !slot.muted })}
       onZoom={(delta) => zoomSlot(slot.id, delta)}
+      onGripPointerDown={layout.mode === 'grid' && layout.count > 1 ? beginMove(slot.id) : undefined}
+      moveState={moving ? (moving.id === slot.id ? 'source' : moving.over === slot.id ? 'target' : 'idle') : null}
       onSettings={() => setSettingsFor(slot.id)}
       onActivate={() => void updateSlot(slot.id, { enabled: true })}
     />
@@ -183,7 +220,10 @@ export function App() {
   const shown =
     layout.mode === 'focus'
       ? [slots[layout.focused]]
-      : [...slots.filter((s) => s.enabled), ...slots.filter((s) => !s.enabled)].slice(0, layout.count)
+      : (() => {
+          const ordered = layout.order.map((id) => slots[id])
+          return [...ordered.filter((s) => s.enabled), ...ordered.filter((s) => !s.enabled)].slice(0, layout.count)
+        })()
 
   const shownIds = new Set(shown.map((s) => s.id))
   for (let id = 0; id < SLOT_COUNT; id++) {

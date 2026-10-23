@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { ZOOM_MAX, ZOOM_MIN, ZOOM_STEP, type SlotConfig, type SlotStatus } from '@shared/types'
 import { Ball } from './Ball'
 import { IconExpand, IconGrid, IconMute, IconReload, IconSettings, IconSound, IconZoomIn, IconZoomOut } from './Icons'
@@ -61,6 +61,8 @@ interface Props {
   onReload: () => void
   onToggleMute: () => void
   onZoom: (delta: number | null) => void
+  onGripPointerDown?: (e: ReactPointerEvent<HTMLElement>) => void
+  moveState: 'source' | 'target' | 'idle' | null
   onSettings: () => void
   onActivate: () => void
 }
@@ -69,10 +71,21 @@ export function Tile(p: Props) {
   const { slot, status } = p
   const [hint, setHint] = useState<string | null>(null)
   return (
-    <section className={`tile${slot.enabled ? '' : ' tile-empty'}`} aria-label={slot.name}>
+    <section
+      className={`tile${slot.enabled ? '' : ' tile-empty'}${p.moveState ? ` tile-move-${p.moveState}` : ''}`}
+      aria-label={slot.name}
+      data-slot={slot.id}
+    >
       <div className="tile-bar">
-        <Ball slot={slot.id} size={22} dim={!slot.enabled} />
-        <span className="tile-name" title={slot.name}>{slot.name}</span>
+        <span
+          className={`tile-grip${p.onGripPointerDown ? ' draggable' : ''}`}
+          onPointerDown={p.onGripPointerDown}
+          onMouseEnter={p.onGripPointerDown ? () => setHint('Drag to move this account to another spot') : undefined}
+          onMouseLeave={p.onGripPointerDown ? () => setHint(null) : undefined}
+        >
+          <Ball slot={slot.id} size={22} dim={!slot.enabled} />
+          <span className="tile-name">{slot.name}</span>
+        </span>
         {hint ? (
           <span className="tile-hint" aria-hidden>{hint}</span>
         ) : (
@@ -132,6 +145,11 @@ export function Tile(p: Props) {
         />
       </div>
       <div className="tile-body" ref={slot.enabled ? p.registerContent : undefined}>
+        {p.moveState && (
+          <div className="move-overlay">
+            {p.moveState === 'source' ? 'Moving this account…' : p.moveState === 'target' ? 'Drop to swap places' : slot.name}
+          </div>
+        )}
         {!slot.enabled && (
           <div className="empty">
             <Ball slot={slot.id} size={64} dim />

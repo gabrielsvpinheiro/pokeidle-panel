@@ -118,6 +118,19 @@ button { cursor: pointer; }
   border-bottom: 2px solid var(--line);
   flex: none;
 }
+.tile-grip { display: flex; align-items: center; gap: 8px; min-width: 0; border-radius: 6px; padding: 2px 6px 2px 2px; margin-left: -2px; }
+.tile-grip.draggable { cursor: grab; touch-action: none; }
+.tile-grip.draggable:hover { background: #ffffff12; }
+.tile-grip.draggable:active { cursor: grabbing; }
+.tile-move-source { opacity: .55; }
+.tile-move-target { border-color: var(--yellow); box-shadow: 0 0 0 2px var(--yellow); }
+.move-overlay {
+  position: absolute; inset: 0; z-index: 1;
+  display: grid; place-items: center;
+  background: #12141d; color: var(--muted);
+  font: 400 10px 'Press Start 2P', monospace;
+}
+.tile-move-target .move-overlay { background: #2a2610; color: var(--yellow); }
 .tile-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .tile-status { color: var(--muted); font-size: 11px; white-space: nowrap; }
 .spacer { flex: 1; }

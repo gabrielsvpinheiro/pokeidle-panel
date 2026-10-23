@@ -22,7 +22,7 @@ export function defaults(): StoredFile {
         proxy: '',
         zoom: 1
       })),
-      layout: { mode: 'grid', count: 4, focused: 0, colRatio: 0.5, rowRatios: [0.5, 0.5] },
+      layout: { mode: 'grid', count: 4, order: [0, 1, 2, 3], focused: 0, colRatio: 0.5, rowRatios: [0.5, 0.5] },
       prefs: { autoReload: true, notifications: true }
     },
     window: { width: 1480, height: 920, maximized: false }
@@ -31,6 +31,9 @@ export function defaults(): StoredFile {
 
 const clamp = (n: unknown, fallback: number): number =>
   typeof n === 'number' && Number.isFinite(n) ? Math.min(0.85, Math.max(0.15, n)) : fallback
+
+const isPermutation = (o: unknown): o is number[] =>
+  Array.isArray(o) && o.length === SLOT_COUNT && Array.from({ length: SLOT_COUNT }, (_, i) => i).every((i) => o.includes(i))
 
 function sanitize(raw: Partial<StoredFile>): StoredFile {
   const base = defaults()
@@ -58,6 +61,7 @@ function sanitize(raw: Partial<StoredFile>): StoredFile {
       layout: {
         mode: l?.mode === 'focus' ? 'focus' : 'grid',
         count: l?.count === 1 || l?.count === 2 || l?.count === 3 ? l.count : 4,
+        order: isPermutation(l?.order) ? [...l.order] : Array.from({ length: SLOT_COUNT }, (_, i) => i),
         focused,
         colRatio: clamp(l?.colRatio, 0.5),
         rowRatios: [clamp(l?.rowRatios?.[0], 0.5), clamp(l?.rowRatios?.[1], 0.5)]

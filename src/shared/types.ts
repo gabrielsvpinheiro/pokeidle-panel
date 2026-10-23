@@ -24,6 +24,7 @@ export type TileCount = 1 | 2 | 3 | 4
 export interface LayoutConfig {
   mode: LayoutMode
   count: TileCount
+  order: number[]
   focused: number
   colRatio: number
   rowRatios: [number, number]
