@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { SLOT_COUNT, clampZoom, type LayoutConfig, type PanelConfig, type SlotConfig, type SlotRects, type SlotStatus, type TileCount, type UpdateState } from '@shared/types'
 import { Ball } from './Ball'
-import { IconLayout } from './Icons'
+import { IconKeyboard, IconLayout } from './Icons'
 import { Settings } from './Settings'
+import { Shortcuts } from './Shortcuts'
 import { Tile } from './Tile'
 import { UpdateBanner } from './UpdateBanner'
 
@@ -17,6 +18,7 @@ export function App() {
   const [statuses, setStatuses] = useState<Record<number, SlotStatus>>({})
   const [since, setSince] = useState<Record<number, number>>({})
   const [now, setNow] = useState(Date.now())
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [moving, setMoving] = useState<{ id: number; over: number | null } | null>(null)
   const [settingsFor, setSettingsFor] = useState<number | null>(null)
   const [dragging, setDragging] = useState(false)
@@ -82,11 +84,12 @@ export function App() {
         if (cmd.type === 'grid') updateLayout({ mode: 'grid' })
         else if (cmd.type === 'focus') updateLayout({ mode: 'focus', focused: cmd.slot })
         else if (cmd.type === 'zoom') zoomSlot(cmd.slot, cmd.delta)
+        else if (cmd.type === 'shortcuts') setShortcutsOpen(true)
       }),
     [updateLayout, zoomSlot]
   )
 
-  const suspended = dragging || settingsFor !== null || moving !== null
+  const suspended = dragging || settingsFor !== null || moving !== null || shortcutsOpen
   useEffect(() => window.panel.setSuspended(suspended), [suspended])
 
   const report = useCallback(() => {
@@ -296,6 +299,10 @@ export function App() {
             </button>
           ))}
         </nav>
+
+        <button className="help-btn" onClick={() => setShortcutsOpen(true)} title="Keyboard shortcuts (Ctrl/Cmd + /)" aria-label="Keyboard shortcuts">
+          <IconKeyboard />
+        </button>
       </header>
 
       <UpdateBanner state={update} onAction={(a) => window.panel.updateAction(a)} />
@@ -309,6 +316,8 @@ export function App() {
           </>
         )}
       </main>
+
+      {shortcutsOpen && <Shortcuts onClose={() => setShortcutsOpen(false)} />}
 
       {editing && (
         <Settings

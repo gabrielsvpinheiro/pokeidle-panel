@@ -235,3 +235,20 @@ button { cursor: pointer; }
 .banner-error { background: #7a1f1f; }
 .banner-uptodate { background: #1f6b3f; }
 .btn-small { padding: 4px 12px; font-size: 12px; }
+
+.help-btn {
+  display: grid; place-items: center; width: 34px; height: 34px; padding: 0;
+  background: #12141dcc; border: 2px solid #12141d; border-radius: 999px; color: #fff;
+}
+.help-btn:hover { background: #12141d; }
+.help-btn:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+.shortcuts { margin: 0; display: flex; flex-direction: column; gap: 2px; }
+.shortcut-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+.shortcut-row:last-child { border-bottom: 0; }
+.shortcut-row dt { display: flex; align-items: center; gap: 4px; color: var(--muted); }
+.shortcut-row dd { margin: 0; text-align: right; }
+kbd {
+  padding: 2px 7px; border-radius: 5px;
+  background: var(--panel-2); border: 1px solid var(--line); border-bottom-width: 2px;
+  font: 600 11px -apple-system, 'Segoe UI', system-ui, sans-serif; color: var(--text); white-space: nowrap;
+}

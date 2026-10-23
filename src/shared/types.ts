@@ -56,6 +56,7 @@ export type PanelCommand =
   | { type: 'grid' }
   | { type: 'focus'; slot: number }
   | { type: 'zoom'; slot: number; delta: number }
+  | { type: 'shortcuts' }
 
 export type UpdateState =
   | { kind: 'idle' }

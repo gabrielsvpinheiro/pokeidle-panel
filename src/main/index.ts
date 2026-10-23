@@ -116,7 +116,10 @@ function buildMenu(): void {
     { role: 'windowMenu' },
     {
       role: 'help',
-      submenu: [{ label: 'Check for updates…', click: () => void updater.check(true) }]
+      submenu: [
+        { label: 'Keyboard shortcuts', accelerator: 'CmdOrCtrl+/', click: () => command({ type: 'shortcuts' }) },
+        { label: 'Check for updates…', click: () => void updater.check(true) }
+      ]
     }
   ]
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
