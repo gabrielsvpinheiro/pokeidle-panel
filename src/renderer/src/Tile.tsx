@@ -7,6 +7,7 @@ const STATUS_LABEL: Record<SlotStatus, string> = {
   idle: 'Empty',
   loading: 'Loading',
   online: 'Online',
+  signedout: 'Signed out',
   error: 'Load failed',
   crashed: 'Recovering'
 }

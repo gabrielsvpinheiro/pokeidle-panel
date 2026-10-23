@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, ipcMain, powerSaveBlocker, shell, type MenuItemConstructorOptions } from 'electron'
+import { app, BrowserWindow, Menu, Notification, ipcMain, powerSaveBlocker, shell, type MenuItemConstructorOptions } from 'electron'
 import { join } from 'node:path'
 import { SLOT_COUNT, type PanelCommand, type UpdateAction, type LayoutConfig, type SlotConfig, type SlotRects } from '@shared/types'
 import { flushConfig, loadConfig, saveConfig, sanitizeConfig, type StoredFile } from './config'
@@ -28,6 +28,23 @@ function command(cmd: PanelCommand): void {
   send('panel:command', cmd)
 }
 
+const activeNotifications = new Set<Notification>()
+
+function alert(slot: number, body: string): void {
+  if (!store.panel.prefs.notifications || !Notification.isSupported()) return
+  const n = new Notification({ title: APP_NAME, body })
+  activeNotifications.add(n)
+  n.on('click', () => {
+    if (win.isDestroyed()) return
+    if (win.isMinimized()) win.restore()
+    win.show()
+    win.focus()
+    command({ type: 'focus', slot })
+  })
+  n.on('close', () => activeNotifications.delete(n))
+  n.show()
+}
+
 function buildMenu(): void {
   const isMac = process.platform === 'darwin'
   const focusItems: MenuItemConstructorOptions[] = Array.from({ length: SLOT_COUNT }, (_, i) => ({
@@ -43,7 +60,26 @@ function buildMenu(): void {
       label: 'Panel',
       submenu: [
         { label: 'Show all (grid)', accelerator: 'CmdOrCtrl+0', click: () => command({ type: 'grid' }) },
-        ...focusItems
+        ...focusItems,
+        { type: 'separator' },
+        {
+          label: 'Auto-recover stuck accounts',
+          type: 'checkbox',
+          checked: store.panel.prefs.autoReload,
+          click: (item) => {
+            store.panel.prefs.autoReload = item.checked
+            persist()
+          }
+        },
+        {
+          label: 'Desktop notifications',
+          type: 'checkbox',
+          checked: store.panel.prefs.notifications,
+          click: (item) => {
+            store.panel.prefs.notifications = item.checked
+            persist()
+          }
+        }
       ]
     },
     { role: 'viewMenu' },
@@ -76,7 +112,10 @@ function createWindow(): void {
   })
   if (w.maximized) win.maximize()
 
-  slots = new SlotManager(win, () => store.panel, (id, status) => send('panel:status', id, status))
+  slots = new SlotManager(win, () => store.panel, {
+    status: (id, status) => send('panel:status', id, status),
+    alert
+  })
 
   const saveBounds = (): void => {
     if (win.isDestroyed()) return

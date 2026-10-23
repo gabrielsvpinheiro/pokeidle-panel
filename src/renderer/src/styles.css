@@ -91,6 +91,7 @@ button { cursor: pointer; }
 .led-online { background: var(--green); box-shadow: 0 0 0 1.5px #12141d, 0 0 8px var(--green); }
 .led-loading { background: var(--yellow); animation: pulse 1s infinite; }
 .led-error, .led-crashed { background: #ff4d4d; }
+.led-signedout { background: #ff9f43; }
 @keyframes pulse { 50% { opacity: .3; } }
 
 .stage { flex: 1; min-height: 0; display: flex; padding: 10px; gap: 0; }

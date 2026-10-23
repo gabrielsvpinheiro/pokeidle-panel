@@ -21,12 +21,18 @@ export interface LayoutConfig {
   rowRatios: [number, number]
 }
 
+export interface PanelPrefs {
+  autoReload: boolean
+  notifications: boolean
+}
+
 export interface PanelConfig {
   slots: SlotConfig[]
   layout: LayoutConfig
+  prefs: PanelPrefs
 }
 
-export type SlotStatus = 'idle' | 'loading' | 'online' | 'error' | 'crashed'
+export type SlotStatus = 'idle' | 'loading' | 'online' | 'signedout' | 'error' | 'crashed'
 
 export interface Rect {
   x: number

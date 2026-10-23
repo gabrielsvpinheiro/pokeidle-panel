@@ -21,7 +21,8 @@ export function defaults(): StoredFile {
         muted: false,
         proxy: ''
       })),
-      layout: { mode: 'grid', count: 4, focused: 0, colRatio: 0.5, rowRatios: [0.5, 0.5] }
+      layout: { mode: 'grid', count: 4, focused: 0, colRatio: 0.5, rowRatios: [0.5, 0.5] },
+      prefs: { autoReload: true, notifications: true }
     },
     window: { width: 1480, height: 920, maximized: false }
   }
@@ -44,9 +45,14 @@ function sanitize(raw: Partial<StoredFile>): StoredFile {
   })
   const l = raw.panel?.layout
   const focused = Number.isInteger(l?.focused) ? Math.min(SLOT_COUNT - 1, Math.max(0, l!.focused)) : 0
+  const p = raw.panel?.prefs
   return {
     panel: {
       slots,
+      prefs: {
+        autoReload: p?.autoReload !== false,
+        notifications: p?.notifications !== false
+      },
       layout: {
         mode: l?.mode === 'focus' ? 'focus' : 'grid',
         count: l?.count === 1 || l?.count === 2 || l?.count === 3 ? l.count : 4,
