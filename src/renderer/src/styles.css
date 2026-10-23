@@ -60,7 +60,18 @@ body.mac .topbar { padding-left: 84px; }
 .dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid #12141d; }
 .dot-r { background: #ff6b6b; } .dot-y { background: var(--yellow); } .dot-g { background: var(--green); }
 
-.trainers { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+.layout-picker {
+  display: flex; gap: 2px; padding: 3px; margin-left: auto;
+  background: #12141dcc; border: 2px solid #12141d; border-radius: 10px;
+}
+.layout-btn {
+  display: grid; place-items: center; width: 30px; height: 26px; padding: 0;
+  background: transparent; border: 0; border-radius: 7px; color: #cfd3e6;
+}
+.layout-btn:hover { background: #ffffff1a; color: #fff; }
+.layout-btn.active { background: #fff; color: #12141d; }
+.layout-btn:focus-visible { outline: 2px solid var(--yellow); outline-offset: 1px; }
+.trainers { display: flex; gap: 6px; flex-wrap: wrap; }
 .trainer {
   display: flex; align-items: center; gap: 8px;
   padding: 5px 12px 5px 8px;

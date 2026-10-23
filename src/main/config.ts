@@ -21,7 +21,7 @@ export function defaults(): StoredFile {
         muted: false,
         proxy: ''
       })),
-      layout: { mode: 'grid', focused: 0, colRatio: 0.5, rowRatios: [0.5, 0.5] }
+      layout: { mode: 'grid', count: 4, focused: 0, colRatio: 0.5, rowRatios: [0.5, 0.5] }
     },
     window: { width: 1480, height: 920, maximized: false }
   }
@@ -49,6 +49,7 @@ function sanitize(raw: Partial<StoredFile>): StoredFile {
       slots,
       layout: {
         mode: l?.mode === 'focus' ? 'focus' : 'grid',
+        count: l?.count === 1 || l?.count === 2 || l?.count === 3 ? l.count : 4,
         focused,
         colRatio: clamp(l?.colRatio, 0.5),
         rowRatios: [clamp(l?.rowRatios?.[0], 0.5), clamp(l?.rowRatios?.[1], 0.5)]

@@ -11,8 +11,11 @@ export interface SlotConfig {
 
 export type LayoutMode = 'grid' | 'focus'
 
+export type TileCount = 1 | 2 | 3 | 4
+
 export interface LayoutConfig {
   mode: LayoutMode
+  count: TileCount
   focused: number
   colRatio: number
   rowRatios: [number, number]

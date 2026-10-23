@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { SLOT_COUNT, type LayoutConfig, type PanelConfig, type SlotConfig, type SlotRects, type SlotStatus, type UpdateState } from '@shared/types'
+import { SLOT_COUNT, type LayoutConfig, type PanelConfig, type SlotConfig, type SlotRects, type SlotStatus, type TileCount, type UpdateState } from '@shared/types'
 import { Ball } from './Ball'
-import { IconGrid } from './Icons'
+import { IconLayout } from './Icons'
 import { Settings } from './Settings'
 import { Tile } from './Tile'
 import { UpdateBanner } from './UpdateBanner'
@@ -157,18 +157,34 @@ export function App() {
     />
   )
 
+  const shown =
+    layout.mode === 'focus'
+      ? [slots[layout.focused]]
+      : [...slots.filter((s) => s.enabled), ...slots.filter((s) => !s.enabled)].slice(0, layout.count)
+
+  const shownIds = new Set(shown.map((s) => s.id))
   for (let id = 0; id < SLOT_COUNT; id++) {
-    const visible = layout.mode === 'grid' || layout.focused === id
-    if (!visible) contentRefs.current[id] = null
+    if (!shownIds.has(id)) contentRefs.current[id] = null
   }
 
-  const column = (c: 0 | 1) => (
-    <div className="col" ref={(el) => { colRefs.current[c] = el }} style={{ flex: c === 0 ? layout.colRatio : 1 - layout.colRatio }}>
-      <div className="cell" style={{ flex: layout.rowRatios[c] }}>{tile(slots[c])}</div>
-      <div className="gutter gutter-h" onPointerDown={startDrag({ kind: 'row', column: c })} onDoubleClick={resetRow(c)} title="Drag to resize, double-click to reset" />
-      <div className="cell" style={{ flex: 1 - layout.rowRatios[c] }}>{tile(slots[c + 2])}</div>
+  const columns: SlotConfig[][] =
+    shown.length === 4 ? [[shown[0], shown[2]], [shown[1], shown[3]]] : shown.length === 3 ? [[shown[0]], [shown[1], shown[2]]] : shown.map((s) => [s])
+
+  const column = (c: 0 | 1, items: SlotConfig[]) => (
+    <div className="col" ref={(el) => { colRefs.current[c] = el }} style={{ flex: columns.length === 1 ? 1 : c === 0 ? layout.colRatio : 1 - layout.colRatio }}>
+      {items.length === 1 ? (
+        <div className="cell" style={{ flex: 1 }}>{tile(items[0])}</div>
+      ) : (
+        <>
+          <div className="cell" style={{ flex: layout.rowRatios[c] }}>{tile(items[0])}</div>
+          <div className="gutter gutter-h" onPointerDown={startDrag({ kind: 'row', column: c })} onDoubleClick={resetRow(c)} title="Drag to resize, double-click to reset" />
+          <div className="cell" style={{ flex: 1 - layout.rowRatios[c] }}>{tile(items[1])}</div>
+        </>
+      )}
     </div>
   )
+
+  const COUNTS: TileCount[] = [1, 2, 3, 4]
 
   const editing = settingsFor !== null ? slots[settingsFor] : null
 
@@ -186,15 +202,22 @@ export function App() {
           )}
         </div>
 
+        <div className="layout-picker" role="group" aria-label="How many accounts to show">
+          {COUNTS.map((n) => (
+            <button
+              key={n}
+              className={`layout-btn${layout.mode === 'grid' && layout.count === n ? ' active' : ''}`}
+              onClick={() => updateLayout({ mode: 'grid', count: n })}
+              title={n === 1 ? 'Show 1 account' : `Show ${n} accounts side by side`}
+              aria-label={n === 1 ? 'Show 1 account' : `Show ${n} accounts`}
+              aria-pressed={layout.mode === 'grid' && layout.count === n}
+            >
+              <IconLayout count={n} />
+            </button>
+          ))}
+        </div>
+
         <nav className="trainers" aria-label="Accounts">
-          <button
-            className={`trainer${layout.mode === 'grid' ? ' active' : ''}`}
-            onClick={() => updateLayout({ mode: 'grid' })}
-            title="Show all accounts (Ctrl/Cmd+0)"
-          >
-            <IconGrid />
-            <span>All accounts</span>
-          </button>
           {slots.map((s) => (
             <button
               key={s.id}
@@ -213,14 +236,12 @@ export function App() {
       <UpdateBanner state={update} onAction={(a) => window.panel.updateAction(a)} />
 
       <main className="stage" ref={stageRef}>
-        {layout.mode === 'grid' ? (
+        {column(0, columns[0])}
+        {columns.length === 2 && (
           <>
-            {column(0)}
             <div className="gutter gutter-v" onPointerDown={startDrag({ kind: 'col' })} onDoubleClick={resetCol} title="Drag to resize, double-click to reset" />
-            {column(1)}
+            {column(1, columns[1])}
           </>
-        ) : (
-          <div className="cell" style={{ flex: 1 }}>{tile(slots[layout.focused])}</div>
         )}
       </main>
 

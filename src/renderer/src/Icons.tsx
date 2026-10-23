@@ -37,3 +37,18 @@ export const IconDownload = () => (
 export const IconClose = () => (
   <svg {...base}><path d="M6 6l12 12M18 6 6 18" /></svg>
 )
+
+const LAYOUT_CELLS: Record<number, [number, number, number, number][]> = {
+  1: [[3, 4, 18, 16]],
+  2: [[3, 4, 8.5, 16], [12.5, 4, 8.5, 16]],
+  3: [[3, 4, 8.5, 16], [12.5, 4, 8.5, 7.5], [12.5, 12.5, 8.5, 7.5]],
+  4: [[3, 4, 8.5, 7.5], [12.5, 4, 8.5, 7.5], [3, 12.5, 8.5, 7.5], [12.5, 12.5, 8.5, 7.5]]
+}
+
+export const IconLayout = ({ count }: { count: number }) => (
+  <svg {...base} strokeWidth={1.8}>
+    {LAYOUT_CELLS[count].map(([x, y, w, h], i) => (
+      <rect key={i} x={x} y={y} width={w} height={h} rx="1.5" />
+    ))}
+  </svg>
+)
