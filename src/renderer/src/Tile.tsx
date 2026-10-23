@@ -1,4 +1,4 @@
-import { useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
+import { useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { ZOOM_MAX, ZOOM_MIN, ZOOM_STEP, type SlotConfig, type SlotStatus } from '@shared/types'
 import { Ball } from './Ball'
 import { IconExpand, IconGrid, IconMute, IconReload, IconSettings, IconSound, IconZoomIn, IconZoomOut } from './Icons'
@@ -75,7 +75,11 @@ export function Tile(p: Props) {
   const draggable = !editing && !!p.onGripPointerDown
   const gripHint = draggable ? 'Drag to move · double-click to rename' : 'Double-click to rename'
 
+  const renameDone = useRef(false)
+
   const finishRename = (value: string, save: boolean) => {
+    if (renameDone.current) return
+    renameDone.current = true
     setEditing(false)
     const name = value.trim()
     if (save && name && name !== slot.name) p.onRename(name)
@@ -92,6 +96,7 @@ export function Tile(p: Props) {
           onPointerDown={draggable ? p.onGripPointerDown : undefined}
           onDoubleClick={() => {
             setHint(null)
+            renameDone.current = false
             setEditing(true)
           }}
           onMouseEnter={editing ? undefined : () => setHint(gripHint)}
