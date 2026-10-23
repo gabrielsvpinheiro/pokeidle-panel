@@ -4,6 +4,16 @@ A desktop panel (Windows and macOS) for running up to **4 [PokeIdle](https://pok
 
 > Unofficial fan tool. It only embeds the public game page in isolated browser sessions; it does not automate, modify or inject anything into the game.
 
+## ⬇️ Download
+
+| System | Direct download |
+| --- | --- |
+| 🍎 **macOS** (Apple Silicon: M1/M2/M3/M4) | [**PokeIdle-Panel-mac-arm64.dmg**](https://github.com/gabrielsvpinheiro/pokeidle-panel/releases/latest/download/PokeIdle-Panel-mac-arm64.dmg) |
+| 🍎 **macOS** (Intel) | [**PokeIdle-Panel-mac-x64.dmg**](https://github.com/gabrielsvpinheiro/pokeidle-panel/releases/latest/download/PokeIdle-Panel-mac-x64.dmg) |
+| 🪟 **Windows** (64-bit) | [**PokeIdle-Panel-win-x64.exe**](https://github.com/gabrielsvpinheiro/pokeidle-panel/releases/latest/download/PokeIdle-Panel-win-x64.exe) |
+
+All versions and release notes: [Releases page](https://github.com/gabrielsvpinheiro/pokeidle-panel/releases/latest). See [First launch](#first-launch-unsigned-builds) if your OS shows a security warning.
+
 ## Features
 
 - **Up to 4 accounts at once**, each with its own cookies, localStorage and login (one persistent Electron session per slot). Log in once and the account stays logged in across restarts.
@@ -21,17 +31,7 @@ A desktop panel (Windows and macOS) for running up to **4 [PokeIdle](https://pok
 | `Ctrl/Cmd + 0` | Show all accounts (grid) |
 | `Ctrl/Cmd + 1…4` | Focus account 1…4 |
 
-## Download
-
-Installers are published on the repository's **Releases** page:
-
-| System | File |
-| --- | --- |
-| macOS (Apple Silicon) | `PokeIdle Panel-<version>-mac-arm64.dmg` |
-| macOS (Intel) | `PokeIdle Panel-<version>-mac-x64.dmg` |
-| Windows (64-bit) | `PokeIdle Panel-<version>-win-x64.exe` |
-
-### First launch (unsigned builds)
+## First launch (unsigned builds)
 
 The installers are not code-signed yet, so the OS will warn you once:
 
