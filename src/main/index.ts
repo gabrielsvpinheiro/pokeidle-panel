@@ -1,5 +1,6 @@
-import { app, BrowserWindow, Menu, Notification, ipcMain, powerSaveBlocker, shell, type MenuItemConstructorOptions } from 'electron'
-import { join } from 'node:path'
+import { app, BrowserWindow, ClipboardItem, Menu, Notification, clipboard, ipcMain, powerSaveBlocker, shell, type MenuItemConstructorOptions } from 'electron'
+import { mkdir, writeFile } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
 import { SLOT_COUNT, ZOOM_STEP, type PanelCommand, type UpdateAction, type LayoutConfig, type SlotConfig, type SlotRects } from '@shared/types'
 import { flushConfig, loadConfig, saveConfig, sanitizeConfig, type StoredFile } from './config'
 import { SlotManager } from './slots'
@@ -26,6 +27,21 @@ function send(channel: string, ...args: unknown[]): void {
 
 function command(cmd: PanelCommand): void {
   send('panel:command', cmd)
+}
+
+const screenshotDir = (): string => join(app.getPath('pictures'), APP_NAME)
+
+async function saveScreenshot(id: number): Promise<string | null> {
+  const image = await slots.capture(id)
+  if (!image) return null
+  const name = store.panel.slots[id].name.replace(/[^\p{L}\p{N}_-]+/gu, '-').replace(/^-+|-+$/g, '') || `account-${id + 1}`
+  const stamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-')
+  const file = join(screenshotDir(), `${name}_${stamp}.png`)
+  await mkdir(screenshotDir(), { recursive: true })
+  const png = image.toPNG()
+  await writeFile(file, png)
+  await clipboard.write([new ClipboardItem({ 'image/png': new Blob([new Uint8Array(png)], { type: 'image/png' }) })]).catch(() => {})
+  return file
 }
 
 function zoomActive(delta: number): void {
@@ -190,6 +206,12 @@ function registerIpc(): void {
   ipcMain.on('panel:suspend', (_e, suspended: boolean) => slots.setSuspended(!!suspended))
   ipcMain.on('panel:reload', (_e, id: number) => slots.reload(id))
   ipcMain.handle('panel:clear', (_e, id: number) => slots.clear(id))
+  ipcMain.handle('panel:screenshot', (_e, id: number) =>
+    Number.isInteger(id) && id >= 0 && id < SLOT_COUNT ? saveScreenshot(id).catch(() => null) : null
+  )
+  ipcMain.on('panel:reveal-screenshot', (_e, file: string) => {
+    if (typeof file === 'string' && dirname(file) === screenshotDir()) shell.showItemInFolder(file)
+  })
 }
 
 app.on('login', (event, webContents, _details, authInfo, callback) => {

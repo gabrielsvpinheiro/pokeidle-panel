@@ -84,6 +84,8 @@ export interface PanelApi {
   setSuspended(suspended: boolean): void
   reloadSlot(id: number): void
   clearSlot(id: number): Promise<void>
+  screenshot(id: number): Promise<string | null>
+  revealScreenshot(path: string): void
   onStatus(cb: (id: number, status: SlotStatus, since: number) => void): () => void
   onCommand(cb: (command: PanelCommand) => void): () => void
 }

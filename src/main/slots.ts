@@ -1,4 +1,4 @@
-import { BrowserWindow, WebContentsView, session, type Session } from 'electron'
+import { BrowserWindow, WebContentsView, session, type NativeImage, type Session } from 'electron'
 import { GAME_URL, type PanelConfig, type SlotRects, type SlotStatus } from '@shared/types'
 import { parseProxy } from './proxy'
 
@@ -98,6 +98,13 @@ export class SlotManager {
     if (!view) return
     if (view.webContents.getURL()) view.webContents.reloadIgnoringCache()
     else void view.webContents.loadURL(GAME_URL)
+  }
+
+  async capture(id: number): Promise<NativeImage | null> {
+    const view = this.views.get(id)
+    if (!view || view.webContents.isDestroyed()) return null
+    const image = await view.webContents.capturePage()
+    return image.isEmpty() ? null : image
   }
 
   async clear(id: number): Promise<void> {

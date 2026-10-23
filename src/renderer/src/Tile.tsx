@@ -1,7 +1,7 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { ZOOM_MAX, ZOOM_MIN, ZOOM_STEP, type SlotConfig, type SlotStatus } from '@shared/types'
 import { Ball } from './Ball'
-import { IconExpand, IconGrid, IconMute, IconReload, IconSettings, IconSound, IconZoomIn, IconZoomOut } from './Icons'
+import { IconCamera, IconExpand, IconGrid, IconMute, IconReload, IconSettings, IconSound, IconZoomIn, IconZoomOut } from './Icons'
 
 const STATUS_LABEL: Record<SlotStatus, string> = {
   idle: 'Empty',
@@ -63,6 +63,7 @@ interface Props {
   onZoom: (delta: number | null) => void
   onGripPointerDown?: (e: ReactPointerEvent<HTMLElement>) => void
   onRename: (name: string) => void
+  onScreenshot: () => Promise<string | null>
   moveState: 'source' | 'target' | 'idle' | null
   onSettings: () => void
   onActivate: () => void
@@ -72,6 +73,19 @@ export function Tile(p: Props) {
   const { slot, status } = p
   const [hint, setHint] = useState<string | null>(null)
   const [editing, setEditing] = useState(false)
+  const [flash, setFlash] = useState<{ text: string; file: string | null } | null>(null)
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const takeScreenshot = async () => {
+    const file = await p.onScreenshot()
+    if (flashTimer.current) clearTimeout(flashTimer.current)
+    setFlash(
+      file
+        ? { text: 'Screenshot saved and copied · click to show', file }
+        : { text: 'Could not take a screenshot', file: null }
+    )
+    flashTimer.current = setTimeout(() => setFlash(null), 4000)
+  }
   const draggable = !editing && !!p.onGripPointerDown
   const gripHint = draggable ? 'Drag to move · double-click to rename' : 'Double-click to rename'
 
@@ -122,7 +136,15 @@ export function Tile(p: Props) {
             <span className="tile-name">{slot.name}</span>
           )}
         </span>
-        {hint ? (
+        {flash ? (
+          <button
+            className="tile-hint tile-flash"
+            role="status"
+            onClick={() => flash.file && window.panel.revealScreenshot(flash.file)}
+          >
+            {flash.text}
+          </button>
+        ) : hint ? (
           <span className="tile-hint" aria-hidden>{hint}</span>
         ) : (
           <>
@@ -169,6 +191,12 @@ export function Tile(p: Props) {
                 onClick={() => p.onZoom(ZOOM_STEP)}
               />
             </div>
+            <ActionButton
+              icon={<IconCamera />}
+              hint="Screenshot: save to Pictures and copy"
+              onHint={setHint}
+              onClick={() => void takeScreenshot()}
+            />
             <ActionButton icon={<IconReload />} hint="Reload this account's game" onHint={setHint} onClick={p.onReload} />
           </>
         )}

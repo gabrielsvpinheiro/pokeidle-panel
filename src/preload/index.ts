@@ -15,6 +15,8 @@ const api: PanelApi = {
   setSuspended: (suspended) => ipcRenderer.send('panel:suspend', suspended),
   reloadSlot: (id) => ipcRenderer.send('panel:reload', id),
   clearSlot: (id) => ipcRenderer.invoke('panel:clear', id),
+  screenshot: (id) => ipcRenderer.invoke('panel:screenshot', id),
+  revealScreenshot: (path) => ipcRenderer.send('panel:reveal-screenshot', path),
   onStatus: (cb) => {
     const handler = (_: unknown, id: number, status: SlotStatus, since: number) => cb(id, status, since)
     ipcRenderer.on('panel:status', handler)
