@@ -62,6 +62,7 @@ interface Props {
   onToggleMute: () => void
   onZoom: (delta: number | null) => void
   onGripPointerDown?: (e: ReactPointerEvent<HTMLElement>) => void
+  onRename: (name: string) => void
   moveState: 'source' | 'target' | 'idle' | null
   onSettings: () => void
   onActivate: () => void
@@ -70,6 +71,15 @@ interface Props {
 export function Tile(p: Props) {
   const { slot, status } = p
   const [hint, setHint] = useState<string | null>(null)
+  const [editing, setEditing] = useState(false)
+  const draggable = !editing && !!p.onGripPointerDown
+  const gripHint = draggable ? 'Drag to move · double-click to rename' : 'Double-click to rename'
+
+  const finishRename = (value: string, save: boolean) => {
+    setEditing(false)
+    const name = value.trim()
+    if (save && name && name !== slot.name) p.onRename(name)
+  }
   return (
     <section
       className={`tile${slot.enabled ? '' : ' tile-empty'}${p.moveState ? ` tile-move-${p.moveState}` : ''}`}
@@ -78,13 +88,34 @@ export function Tile(p: Props) {
     >
       <div className="tile-bar">
         <span
-          className={`tile-grip${p.onGripPointerDown ? ' draggable' : ''}`}
-          onPointerDown={p.onGripPointerDown}
-          onMouseEnter={p.onGripPointerDown ? () => setHint('Drag to move this account to another spot') : undefined}
-          onMouseLeave={p.onGripPointerDown ? () => setHint(null) : undefined}
+          className={`tile-grip${draggable ? ' draggable' : ''}`}
+          onPointerDown={draggable ? p.onGripPointerDown : undefined}
+          onDoubleClick={() => {
+            setHint(null)
+            setEditing(true)
+          }}
+          onMouseEnter={editing ? undefined : () => setHint(gripHint)}
+          onMouseLeave={() => setHint(null)}
+          title={editing ? undefined : gripHint}
         >
           <Ball slot={slot.id} size={22} dim={!slot.enabled} />
-          <span className="tile-name">{slot.name}</span>
+          {editing ? (
+            <input
+              className="tile-name-input"
+              defaultValue={slot.name}
+              maxLength={24}
+              autoFocus
+              aria-label="Account nickname"
+              onFocus={(e) => e.currentTarget.select()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') finishRename(e.currentTarget.value, true)
+                else if (e.key === 'Escape') finishRename(e.currentTarget.value, false)
+              }}
+              onBlur={(e) => finishRename(e.currentTarget.value, true)}
+            />
+          ) : (
+            <span className="tile-name">{slot.name}</span>
+          )}
         </span>
         {hint ? (
           <span className="tile-hint" aria-hidden>{hint}</span>

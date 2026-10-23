@@ -122,6 +122,11 @@ button { cursor: pointer; }
 .tile-grip.draggable { cursor: grab; touch-action: none; }
 .tile-grip.draggable:hover { background: #ffffff12; }
 .tile-grip.draggable:active { cursor: grabbing; }
+.tile-name-input {
+  width: 150px; min-width: 0; padding: 3px 6px;
+  background: #0f111a; border: 2px solid var(--blue); border-radius: 6px; outline: none;
+  font-weight: 600; user-select: text;
+}
 .tile-move-source { opacity: .55; }
 .tile-move-target { border-color: var(--yellow); box-shadow: 0 0 0 2px var(--yellow); }
 .move-overlay {

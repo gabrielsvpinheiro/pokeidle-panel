@@ -210,6 +210,7 @@ export function App() {
       onReload={() => window.panel.reloadSlot(slot.id)}
       onToggleMute={() => void updateSlot(slot.id, { muted: !slot.muted })}
       onZoom={(delta) => zoomSlot(slot.id, delta)}
+      onRename={(name) => void updateSlot(slot.id, { name })}
       onGripPointerDown={layout.mode === 'grid' && layout.count > 1 ? beginMove(slot.id) : undefined}
       moveState={moving ? (moving.id === slot.id ? 'source' : moving.over === slot.id ? 'target' : 'idle') : null}
       onSettings={() => setSettingsFor(slot.id)}
