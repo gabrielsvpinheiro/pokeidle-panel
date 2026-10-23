@@ -98,8 +98,6 @@ export class SlotManager {
     }
 
     const ses = this.sessionOf(id)
-    ses.setUserAgent(ses.getUserAgent().replace(/ Electron\/\S+/, '').replace(/ pokeidle-panel\/\S+/, ''))
-
     const view = new WebContentsView({
       webPreferences: {
         session: ses,
