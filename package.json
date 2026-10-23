@@ -1,7 +1,7 @@
 {
   "name": "pokeidle-panel",
   "productName": "PokeIdle Panel",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Multi-account panel for PokeIdle with isolated sessions",
   "main": "./out/main/index.js",
   "author": "Gabriel Pinheiro",
