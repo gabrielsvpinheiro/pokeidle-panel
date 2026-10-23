@@ -31,12 +31,6 @@ export const IconSettings = () => (
     <circle cx="16" cy="6" r="2.2" /><circle cx="10" cy="12" r="2.2" /><circle cx="18" cy="18" r="2.2" />
   </svg>
 )
-export const IconTools = () => (
-  <svg {...base}>
-    <rect x="5" y="3" width="14" height="18" rx="2" />
-    <path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01" />
-  </svg>
-)
 export const IconDownload = () => (
   <svg {...base}><path d="M12 3v12M7 10l5 5 5-5M5 21h14" /></svg>
 )

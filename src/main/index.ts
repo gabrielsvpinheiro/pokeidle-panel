@@ -1,17 +1,19 @@
 import { app, BrowserWindow, Menu, ipcMain, powerSaveBlocker, shell, type MenuItemConstructorOptions } from 'electron'
 import { join } from 'node:path'
-import { SLOT_COUNT, type PanelCommand, type LayoutConfig, type SlotConfig, type SlotRects } from '@shared/types'
+import { SLOT_COUNT, type PanelCommand, type UpdateAction, type LayoutConfig, type SlotConfig, type SlotRects } from '@shared/types'
 import { flushConfig, loadConfig, saveConfig, sanitizeConfig, type StoredFile } from './config'
 import { SlotManager } from './slots'
+import { Updater } from './updater'
 
 const APP_NAME = 'PokeIdle Panel'
 
 app.setName(APP_NAME)
-app.setPath('userData', join(app.getPath('appData'), 'pokeidle-panel'))
+app.setPath('userData', process.env.POKEIDLE_PANEL_DATA ?? join(app.getPath('appData'), 'pokeidle-panel'))
 
 let store: StoredFile
 let win: BrowserWindow
 let slots: SlotManager
+let updater: Updater
 
 function persist(): void {
   store = sanitizeConfig(store)
@@ -45,7 +47,11 @@ function buildMenu(): void {
       ]
     },
     { role: 'viewMenu' },
-    { role: 'windowMenu' }
+    { role: 'windowMenu' },
+    {
+      role: 'help',
+      submenu: [{ label: 'Check for updates…', click: () => void updater.check(true) }]
+    }
   ]
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 }
@@ -100,7 +106,17 @@ function createWindow(): void {
 }
 
 function registerIpc(): void {
-  ipcMain.handle('panel:get-state', () => ({ config: store.panel, statuses: slots.getStatuses() }))
+  ipcMain.handle('panel:get-state', () => ({
+    config: store.panel,
+    statuses: slots.getStatuses(),
+    version: app.getVersion(),
+    update: updater.getState()
+  }))
+  ipcMain.on('panel:update-action', (_e, action: UpdateAction) => {
+    if (action === 'check') void updater.check(true)
+    else if (action === 'install') updater.install()
+    else if (action === 'download') updater.openDownload()
+  })
 
   ipcMain.handle('panel:update-slot', async (_e, id: number, patch: Partial<SlotConfig>) => {
     if (!Number.isInteger(id) || id < 0 || id >= SLOT_COUNT) return
@@ -135,6 +151,8 @@ app.whenReady().then(() => {
   powerSaveBlocker.start('prevent-app-suspension')
   buildMenu()
   createWindow()
+  updater = new Updater((state) => send('panel:update-state', state))
+  updater.start()
   registerIpc()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

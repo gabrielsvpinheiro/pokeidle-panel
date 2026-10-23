@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { SLOT_COUNT, type LayoutConfig, type PanelConfig, type SlotConfig, type SlotRects, type SlotStatus } from '@shared/types'
+import { SLOT_COUNT, type LayoutConfig, type PanelConfig, type SlotConfig, type SlotRects, type SlotStatus, type UpdateState } from '@shared/types'
 import { Ball } from './Ball'
 import { IconGrid } from './Icons'
 import { Settings } from './Settings'
 import { Tile } from './Tile'
+import { UpdateBanner } from './UpdateBanner'
 
 const MIN = 0.15
 const MAX = 0.85
@@ -16,6 +17,8 @@ export function App() {
   const [statuses, setStatuses] = useState<Record<number, SlotStatus>>({})
   const [settingsFor, setSettingsFor] = useState<number | null>(null)
   const [dragging, setDragging] = useState(false)
+  const [version, setVersion] = useState('')
+  const [update, setUpdate] = useState<UpdateState>({ kind: 'idle' })
 
   const stageRef = useRef<HTMLDivElement>(null)
   const colRefs = useRef<(HTMLDivElement | null)[]>([null, null])
@@ -25,9 +28,15 @@ export function App() {
     void window.panel.getState().then((s) => {
       setConfig(s.config)
       setStatuses(s.statuses)
+      setVersion(s.version)
+      setUpdate(s.update)
     })
     const offStatus = window.panel.onStatus((id, status) => setStatuses((prev) => ({ ...prev, [id]: status })))
-    return offStatus
+    const offUpdate = window.panel.onUpdate(setUpdate)
+    return () => {
+      offStatus()
+      offUpdate()
+    }
   }, [])
 
   const updateLayout = useCallback((patch: Partial<LayoutConfig>) => {
@@ -170,6 +179,11 @@ export function App() {
           <span className="lens" />
           <span className="dot dot-r" /><span className="dot dot-y" /><span className="dot dot-g" />
           <h1>POKEIDLE PANEL</h1>
+          {version && (
+            <button className="version" onClick={() => window.panel.updateAction('check')} title="Click to check for updates">
+              v{version}
+            </button>
+          )}
         </div>
 
         <nav className="trainers" aria-label="Accounts">
@@ -195,6 +209,8 @@ export function App() {
           ))}
         </nav>
       </header>
+
+      <UpdateBanner state={update} onAction={(a) => window.panel.updateAction(a)} />
 
       <main className="stage" ref={stageRef}>
         {layout.mode === 'grid' ? (

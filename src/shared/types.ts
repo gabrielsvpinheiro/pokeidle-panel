@@ -38,8 +38,26 @@ export type PanelCommand =
   | { type: 'grid' }
   | { type: 'focus'; slot: number }
 
+export type UpdateState =
+  | { kind: 'idle' }
+  | { kind: 'checking' }
+  | { kind: 'uptodate' }
+  | { kind: 'downloading'; version: string; percent: number }
+  | { kind: 'ready'; version: string }
+  | { kind: 'manual'; version: string }
+  | { kind: 'error'; message: string }
+
+export type UpdateAction = 'check' | 'install' | 'download'
+
 export interface PanelApi {
-  getState(): Promise<{ config: PanelConfig; statuses: Record<number, SlotStatus> }>
+  getState(): Promise<{
+    config: PanelConfig
+    statuses: Record<number, SlotStatus>
+    version: string
+    update: UpdateState
+  }>
+  updateAction(action: UpdateAction): void
+  onUpdate(cb: (state: UpdateState) => void): () => void
   updateSlot(id: number, patch: Partial<Omit<SlotConfig, 'id'>>): Promise<void>
   setLayout(layout: LayoutConfig): Promise<void>
   setRects(rects: SlotRects): void

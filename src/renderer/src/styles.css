@@ -180,3 +180,11 @@ body.mac .topbar { padding-left: 84px; }
 .dialog footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
 
 @media (prefers-reduced-motion: reduce) { .led-loading { animation: none; } }
+
+.version { margin-left: 4px; padding: 2px 8px; background: #12141d99; border: 1px solid #ffffff44; border-radius: 999px; color: #fff; font-size: 11px; }
+.version:hover { background: #12141d; }
+.banner { display: flex; align-items: center; gap: 12px; padding: 8px 14px; background: var(--blue); color: #fff; border-bottom: 3px solid #12141d; flex: none; }
+.banner span { flex: 1; }
+.banner-error { background: #7a1f1f; }
+.banner-uptodate { background: #1f6b3f; }
+.btn-small { padding: 4px 12px; font-size: 12px; }
