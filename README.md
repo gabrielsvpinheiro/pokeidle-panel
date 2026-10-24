@@ -21,8 +21,8 @@ All versions and release notes: [Releases page](https://github.com/gabrielsvpinh
 - **Resizable tiles** with draggable dividers (double-click a divider to reset) and **drag an account by its name** to swap places.
 - **Focus mode**: expand any account to fill the window, then go back to the grid.
 - **Energy saving**: accounts that are not on screen (hidden tiles, minimized or covered window) are throttled like background browser tabs and keep farming, and the system is kept from suspending the app.
-- **Eco mode** (🍃 button, `Ctrl/Cmd + E`): only the account you click stays live; the other visible accounts are refreshed as pictures every 5–60s (Panel menu). Click a picture to make it live. Turns on automatically on battery by default.
-- **Pause & Farming screen**: pause one account (⏸ in its bar) or all of them (⏸ in the top bar, `Ctrl/Cmd + Shift + E`). Paused accounts stay loaded and signed in and keep farming in the background, showing a static *Farming…* card (or a picture) until you click to play. The live account pauses itself after 2 minutes without input (configurable in the Panel menu).
+- **Energy menu** (🍃 **Eco** button in the top bar): choose **All screens live**, **Eco** (only the account you click stays live) or **Farming** (hide every screen), what hidden screens show (a *Farming…* card or a picture refreshed every 5–60s), when Eco hides the live screen after no use, and whether Eco turns on automatically on battery.
+- **Hide any screen**: the eye button in an account bar hides its screen. Hidden accounts stay loaded and signed in and keep farming in the background; click the card to show it again.
 - **CPU and memory** per account and for the whole app, in the account bar and the top bar.
 - **Auto-recovery**: failed loads retry with backoff, frozen pages are restarted and crashed pages reload.
 - **Desktop notifications** when an account fails to load, freezes, crashes or gets signed out (click to jump to it).
@@ -42,7 +42,7 @@ Press `Ctrl/Cmd + /` or the keyboard button in the top bar to see them in the ap
 | `Ctrl/Cmd + =` / `Ctrl/Cmd + -` | Zoom in / out the last clicked account |
 | `Ctrl + mouse wheel` | Zoom inside a game |
 | `Ctrl/Cmd + E` | Turn Eco mode on/off |
-| `Ctrl/Cmd + Shift + E` | Pause all accounts (keep farming) |
+| `Ctrl/Cmd + Shift + E` | Hide all screens (keep farming) |
 | `Ctrl/Cmd + /` | Shortcuts list |
 | Double-click a name | Rename an account |
 | Drag a name | Swap two accounts |
