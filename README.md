@@ -20,7 +20,9 @@ All versions and release notes: [Releases page](https://github.com/gabrielsvpinh
 - **Choose how many to show**: 1, 2, 3 or 4 tiles from the top bar. Accounts that do not fit keep farming in the background.
 - **Resizable tiles** with draggable dividers (double-click a divider to reset) and **drag an account by its name** to swap places.
 - **Focus mode**: expand any account to fill the window, then go back to the grid.
-- **Keeps farming in the background**: throttling is disabled for the game views and the system is kept from suspending the app.
+- **Energy saving**: accounts that are not on screen (hidden tiles, minimized or covered window) are throttled like background browser tabs and keep farming, and the system is kept from suspending the app.
+- **Eco mode** (🍃 button, `Ctrl/Cmd + E`): only the account you click stays live; the other visible accounts are refreshed as pictures every 5–60s (Panel menu). Click a picture to make it live. Turns on automatically on battery by default.
+- **CPU and memory** per account and for the whole app, in the account bar and the top bar.
 - **Auto-recovery**: failed loads retry with backoff, frozen pages are restarted and crashed pages reload.
 - **Desktop notifications** when an account fails to load, freezes, crashes or gets signed out (click to jump to it).
 - **Per-account zoom** (50% to 150%), **online timer**, **one-click screenshot** (saved to *Pictures/PokeIdle Panel* and copied) and **rename by double-click**.
@@ -38,6 +40,7 @@ Press `Ctrl/Cmd + /` or the keyboard button in the top bar to see them in the ap
 | `Ctrl/Cmd + 0` | Back to the grid |
 | `Ctrl/Cmd + =` / `Ctrl/Cmd + -` | Zoom in / out the last clicked account |
 | `Ctrl + mouse wheel` | Zoom inside a game |
+| `Ctrl/Cmd + E` | Turn Eco mode on/off |
 | `Ctrl/Cmd + /` | Shortcuts list |
 | Double-click a name | Rename an account |
 | Drag a name | Swap two accounts |
