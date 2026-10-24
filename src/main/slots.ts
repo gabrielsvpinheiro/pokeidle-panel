@@ -90,6 +90,14 @@ export class SlotManager {
     return slots.find((s) => this.views.has(s.id))?.id ?? null
   }
 
+  pids(): Map<number, number> {
+    const pids = new Map<number, number>()
+    for (const [id, view] of this.views) {
+      if (!view.webContents.isDestroyed()) pids.set(id, view.webContents.getOSProcessId())
+    }
+    return pids
+  }
+
   getLive(): number | null {
     return this.live
   }

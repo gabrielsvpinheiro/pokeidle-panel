@@ -47,6 +47,16 @@ export interface EcoState {
   live: number | null
 }
 
+export interface Usage {
+  cpu: number
+  memory: number
+}
+
+export interface UsageReport {
+  slots: Record<number, Usage>
+  total: Usage
+}
+
 export interface Snapshot {
   url: string
   at: number
@@ -99,6 +109,7 @@ export interface PanelApi {
   setLive(id: number): void
   onEco(cb: (state: EcoState) => void): () => void
   onSnapshot(cb: (id: number, snapshot: Snapshot) => void): () => void
+  onUsage(cb: (report: UsageReport) => void): () => void
   updateAction(action: UpdateAction): void
   onUpdate(cb: (state: UpdateState) => void): () => void
   updateSlot(id: number, patch: Partial<Omit<SlotConfig, 'id'>>): Promise<void>

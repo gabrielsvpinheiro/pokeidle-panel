@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { EcoState, PanelApi, PanelCommand, SlotStatus, Snapshot, UpdateState } from '@shared/types'
+import type { EcoState, PanelApi, PanelCommand, SlotStatus, Snapshot, UpdateState, UsageReport } from '@shared/types'
 
 const api: PanelApi = {
   getState: () => ipcRenderer.invoke('panel:get-state'),
@@ -22,6 +22,11 @@ const api: PanelApi = {
     const handler = (_: unknown, id: number, snapshot: Snapshot) => cb(id, snapshot)
     ipcRenderer.on('panel:snapshot', handler)
     return () => ipcRenderer.removeListener('panel:snapshot', handler)
+  },
+  onUsage: (cb) => {
+    const handler = (_: unknown, report: UsageReport) => cb(report)
+    ipcRenderer.on('panel:usage', handler)
+    return () => ipcRenderer.removeListener('panel:usage', handler)
   },
   setRects: (rects) => ipcRenderer.send('panel:rects', rects),
   setSuspended: (suspended) => ipcRenderer.send('panel:suspend', suspended),

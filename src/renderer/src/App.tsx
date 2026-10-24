@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { SLOT_COUNT, clampZoom, type LayoutConfig, type PanelConfig, type SlotConfig, type SlotRects, type SlotStatus, type Snapshot, type TileCount, type UpdateState, type EcoState } from '@shared/types'
+import { SLOT_COUNT, clampZoom, type LayoutConfig, type PanelConfig, type SlotConfig, type SlotRects, type SlotStatus, type Snapshot, type TileCount, type UpdateState, type EcoState, type UsageReport } from '@shared/types'
 import { Ball } from './Ball'
 import { IconKeyboard, IconLayout, IconLeaf } from './Icons'
 import { Settings } from './Settings'
 import { Shortcuts } from './Shortcuts'
 import { Tile } from './Tile'
 import { UpdateBanner } from './UpdateBanner'
+
+export const formatMemory = (mb: number): string => (mb >= 1024 ? `${(mb / 1024).toFixed(1)} GB` : `${mb} MB`)
 
 const MIN = 0.15
 const MAX = 0.85
@@ -20,6 +22,7 @@ export function App() {
   const [now, setNow] = useState(Date.now())
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [eco, setEco] = useState<EcoState>({ active: false, byBattery: false, live: null })
+  const [usage, setUsage] = useState<UsageReport | null>(null)
   const [snapshots, setSnapshots] = useState<Record<number, Snapshot>>({})
   const [moving, setMoving] = useState<{ id: number; over: number | null } | null>(null)
   const [settingsFor, setSettingsFor] = useState<number | null>(null)
@@ -45,6 +48,7 @@ export function App() {
       setSince((prev) => ({ ...prev, [id]: at }))
     })
     const offEco = window.panel.onEco(setEco)
+    const offUsage = window.panel.onUsage(setUsage)
     const offSnapshot = window.panel.onSnapshot((id, snap) => setSnapshots((prev) => ({ ...prev, [id]: snap })))
     const offUpdate = window.panel.onUpdate(setUpdate)
     return () => {
@@ -52,6 +56,7 @@ export function App() {
       offUpdate()
       offEco()
       offSnapshot()
+      offUsage()
     }
   }, [])
 
@@ -226,6 +231,7 @@ export function App() {
       onRename={(name) => void updateSlot(slot.id, { name })}
       onScreenshot={() => window.panel.screenshot(slot.id)}
       frozen={slot.enabled && isFrozen(slot.id)}
+      usage={usage?.slots[slot.id] ?? null}
       snapshot={snapshots[slot.id] ?? null}
       now={now}
       onWake={() => window.panel.setLive(slot.id)}
@@ -322,6 +328,15 @@ export function App() {
             </button>
           ))}
         </nav>
+
+        {usage && (
+          <span
+            className="usage-total"
+            title="Whole app: CPU (100% = one core) and memory. Activity Monitor can show more memory because it also counts GPU and compressed memory."
+          >
+            CPU {usage.total.cpu}% · {formatMemory(usage.total.memory)}
+          </span>
+        )}
 
         <button
           className={`eco-btn${eco.active ? ' active' : ''}`}

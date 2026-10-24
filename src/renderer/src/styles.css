@@ -175,6 +175,9 @@ button { cursor: pointer; }
 @container (max-width: 420px) {
   .tile-status { display: none; }
 }
+@container (max-width: 560px) {
+  .tile-usage { display: none; }
+}
 @container (max-width: 340px) {
   .zoom-group { display: none; }
 }
@@ -273,3 +276,9 @@ kbd {
   font-size: 11px; font-weight: 600;
 }
 .eco-frame:hover .eco-badge { background: #3ddc84; color: #0d2a19; }
+
+.tile-usage { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.usage-total {
+  padding: 6px 10px; border-radius: 999px; background: #12141dcc; border: 2px solid #12141d;
+  color: #fff; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap;
+}

@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ClipboardItem, Menu, Notification, clipboard, ipcMain, powerMonitor, powerSaveBlocker, shell, type MenuItemConstructorOptions } from 'electron'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import { ECO_INTERVALS, SLOT_COUNT, ZOOM_STEP, type EcoState, type PanelCommand, type PanelPrefs, type UpdateAction, type LayoutConfig, type SlotConfig, type SlotRects } from '@shared/types'
+import { ECO_INTERVALS, SLOT_COUNT, ZOOM_STEP, type EcoState, type PanelCommand, type PanelPrefs, type UsageReport, type UpdateAction, type LayoutConfig, type SlotConfig, type SlotRects } from '@shared/types'
 import { flushConfig, loadConfig, saveConfig, sanitizeConfig, type StoredFile } from './config'
 import { SlotManager } from './slots'
 import { Updater } from './updater'
@@ -55,6 +55,27 @@ function applyEco(): void {
   const state = ecoState()
   slots.setEco(state.active, store.panel.prefs.ecoInterval)
   send('panel:eco', ecoState())
+}
+
+const USAGE_INTERVAL = 5000
+
+function reportUsage(): void {
+  if (!slots || win.isDestroyed() || win.isMinimized() || !win.isVisible()) return
+  const metrics = app.getAppMetrics()
+  const byPid = new Map(metrics.map((m) => [m.pid, m]))
+  const mb = (kb: number): number => Math.round(kb / 1024)
+  const report: UsageReport = {
+    slots: {},
+    total: {
+      cpu: Math.round(metrics.reduce((sum, m) => sum + m.cpu.percentCPUUsage, 0)),
+      memory: mb(metrics.reduce((sum, m) => sum + m.memory.workingSetSize, 0))
+    }
+  }
+  for (const [id, pid] of slots.pids()) {
+    const m = byPid.get(pid)
+    if (m) report.slots[id] = { cpu: Math.round(m.cpu.percentCPUUsage), memory: mb(m.memory.workingSetSize) }
+  }
+  send('panel:usage', report)
 }
 
 function setPrefs(patch: Partial<PanelPrefs>): void {
@@ -274,6 +295,7 @@ app.whenReady().then(() => {
   if (process.platform === 'darwin' && !app.isPackaged) app.dock?.setIcon(join(__dirname, '../../build/icon.png'))
   powerSaveBlocker.start('prevent-app-suspension')
   powerMonitor.on('on-battery', applyEco)
+  setInterval(reportUsage, USAGE_INTERVAL)
   powerMonitor.on('on-ac', applyEco)
   buildMenu()
   createWindow()

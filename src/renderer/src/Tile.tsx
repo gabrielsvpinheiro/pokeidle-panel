@@ -1,5 +1,5 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
-import { ZOOM_MAX, ZOOM_MIN, ZOOM_STEP, type SlotConfig, type SlotStatus, type Snapshot } from '@shared/types'
+import { ZOOM_MAX, ZOOM_MIN, ZOOM_STEP, type SlotConfig, type SlotStatus, type Snapshot, type Usage } from '@shared/types'
 import { Ball } from './Ball'
 import { IconCamera, IconExpand, IconLeaf, IconGrid, IconMute, IconReload, IconSettings, IconSound, IconZoomIn, IconZoomOut } from './Icons'
 
@@ -70,6 +70,7 @@ interface Props {
   onRename: (name: string) => void
   onScreenshot: () => Promise<string | null>
   frozen: boolean
+  usage: Usage | null
   snapshot: Snapshot | null
   now: number
   onWake: () => void
@@ -165,6 +166,12 @@ export function Tile(p: Props) {
           </>
         )}
         <span className="spacer" />
+        {p.usage && !hint && !flash && (
+          <span className="tile-usage" title="CPU (100% = one core) and memory used by this account">
+            {p.frozen ? 'Eco · ' : ''}
+            {p.usage.cpu}% · {p.usage.memory >= 1024 ? `${(p.usage.memory / 1024).toFixed(1)} GB` : `${p.usage.memory} MB`}
+          </span>
+        )}
         {slot.enabled && (
           <>
             <ActionButton
