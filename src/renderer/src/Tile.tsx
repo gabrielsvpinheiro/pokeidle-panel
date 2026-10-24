@@ -1,7 +1,7 @@
-import { useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { ZOOM_MAX, ZOOM_MIN, ZOOM_STEP, type SlotConfig, type SlotStatus, type Snapshot, type Usage } from '@shared/types'
 import { Ball } from './Ball'
-import { IconCamera, IconExpand, IconLeaf, IconPause, IconGrid, IconMute, IconReload, IconSettings, IconSound, IconZoomIn, IconZoomOut } from './Icons'
+import { IconCamera, IconExpand, IconEyeOff, IconLeaf, IconGrid, IconMute, IconReload, IconSettings, IconSound, IconZoomIn, IconZoomOut } from './Icons'
 
 const STATUS_LABEL: Record<SlotStatus, string> = {
   idle: 'Empty',
@@ -74,7 +74,7 @@ interface Props {
   snapshot: Snapshot | null
   now: number
   onWake: () => void
-  onPause?: () => void
+  onHide?: () => void
   moveState: 'source' | 'target' | 'idle' | null
   onSettings: () => void
   onActivate: () => void
@@ -83,6 +83,7 @@ interface Props {
 export function Tile(p: Props) {
   const { slot, status } = p
   const [hint, setHint] = useState<string | null>(null)
+  useEffect(() => setHint(null), [p.frozen])
   const [editing, setEditing] = useState(false)
   const [flash, setFlash] = useState<{ text: string; file: string | null } | null>(null)
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -173,12 +174,12 @@ export function Tile(p: Props) {
             {p.usage.cpu}% · {p.usage.memory >= 1024 ? `${(p.usage.memory / 1024).toFixed(1)} GB` : `${p.usage.memory} MB`}
           </span>
         )}
-        {p.onPause && (
+        {p.onHide && (
           <ActionButton
-            icon={<IconPause />}
-            hint="Pause: show the Farming screen, keeps farming in the background"
+            icon={<IconEyeOff />}
+            hint="Hide this screen: it keeps farming in the background"
             onHint={setHint}
-            onClick={p.onPause}
+            onClick={p.onHide}
           />
         )}
         {slot.enabled && (
@@ -235,22 +236,22 @@ export function Tile(p: Props) {
       </div>
       <div className="tile-body" ref={slot.enabled ? p.registerContent : undefined}>
         {p.frozen && !p.moveState && slot.enabled && p.snapshot && (
-          <button className="eco-frame" onClick={p.onWake} title="Eco mode: click to make this account live">
+          <button className="eco-frame" onClick={p.onWake} title="This account keeps farming in the background. Click to show it.">
             <img src={p.snapshot.url} alt="" draggable={false} />
             <span className="eco-badge">
               <IconLeaf />
-              Eco · updated {formatAgo(p.now - p.snapshot.at)} · click to play
+              Farming · updated {formatAgo(p.now - p.snapshot.at)} · click to show
             </span>
           </button>
         )}
         {p.frozen && !p.moveState && slot.enabled && !p.snapshot && (
-          <button className="farm-card" onClick={p.onWake} title="This account keeps farming in the background. Click to play it.">
+          <button className="farm-card" onClick={p.onWake} title="This account keeps farming in the background. Click to show it.">
             <Ball slot={slot.id} size={56} />
             <strong>Farming…</strong>
             <span className="farm-status">
               {p.onlineFor !== null ? `Online · ${formatDuration(p.onlineFor)}` : STATUS_LABEL[status]}
             </span>
-            <span className="farm-hint">Click to play</span>
+            <span className="farm-hint">Click to show</span>
           </button>
         )}
         {p.moveState && (

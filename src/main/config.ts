@@ -20,7 +20,8 @@ export function defaults(): StoredFile {
         enabled: i === 0,
         muted: false,
         proxy: '',
-        zoom: 1
+        zoom: 1,
+        hidden: false
       })),
       layout: { mode: 'grid', count: 4, order: [0, 1, 2, 3], focused: 0, colRatio: 0.5, rowRatios: [0.5, 0.5] },
       prefs: { autoReload: true, notifications: true, eco: false, ecoOnBattery: true, ecoInterval: 15, ecoIdleMinutes: 2 }
@@ -45,7 +46,8 @@ function sanitize(raw: Partial<StoredFile>): StoredFile {
       enabled: typeof s?.enabled === 'boolean' ? s.enabled : slot.enabled,
       muted: typeof s?.muted === 'boolean' ? s.muted : slot.muted,
       proxy: typeof s?.proxy === 'string' ? s.proxy.trim() : '',
-      zoom: typeof s?.zoom === 'number' && Number.isFinite(s.zoom) ? clampZoom(s.zoom) : 1
+      zoom: typeof s?.zoom === 'number' && Number.isFinite(s.zoom) ? clampZoom(s.zoom) : 1,
+      hidden: s?.hidden === true
     }
   })
   const l = raw.panel?.layout

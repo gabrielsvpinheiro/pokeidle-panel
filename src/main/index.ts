@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ClipboardItem, Menu, Notification, clipboard, ipcMain, powerMonitor, powerSaveBlocker, shell, type MenuItemConstructorOptions } from 'electron'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import { ECO_IDLE_MINUTES, ECO_INTERVALS, SLOT_COUNT, ZOOM_STEP, type EcoState, type PanelCommand, type PanelPrefs, type UsageReport, type UpdateAction, type LayoutConfig, type SlotConfig, type SlotRects } from '@shared/types'
+import { ECO_IDLE_MINUTES, ECO_INTERVALS, SLOT_COUNT, ZOOM_STEP, type EcoMode, type EcoState, type PanelCommand, type PanelPrefs, type UsageReport, type UpdateAction, type LayoutConfig, type SlotConfig, type SlotRects } from '@shared/types'
 import { flushConfig, loadConfig, saveConfig, sanitizeConfig, type StoredFile } from './config'
 import { SlotManager } from './slots'
 import { Updater } from './updater'
@@ -85,9 +85,67 @@ function setPrefs(patch: Partial<PanelPrefs>): void {
   applyEco()
 }
 
-function pauseAll(): void {
-  if (!ecoState().active) setPrefs({ eco: true })
-  slots.setLive(null)
+function ecoMode(): EcoMode {
+  const enabled = store.panel.slots.filter((s) => s.enabled)
+  if (enabled.length > 0 && enabled.every((s) => s.hidden)) return 'farming'
+  return ecoState().active ? 'eco' : 'off'
+}
+
+function setHiddenAll(hidden: boolean): void {
+  store.panel.slots = store.panel.slots.map((s) => ({ ...s, hidden: s.enabled ? hidden : false }))
+  send('panel:command', { type: 'reload-config' })
+}
+
+function setEcoMode(mode: EcoMode): void {
+  const state = ecoState()
+  if (mode === 'farming') {
+    setHiddenAll(true)
+    setPrefs({})
+    return
+  }
+  setHiddenAll(false)
+  if (mode === 'eco') {
+    setPrefs({ eco: true })
+    slots.wakeDefault()
+  } else {
+    setPrefs({ eco: false, ...(state.byBattery ? { ecoOnBattery: false } : {}) })
+  }
+}
+
+function ecoMenu(): Menu {
+  const prefs = store.panel.prefs
+  const mode = ecoMode()
+  const header = (label: string): MenuItemConstructorOptions => ({ label, enabled: false })
+  return Menu.buildFromTemplate([
+    header('Mode'),
+    { label: 'All screens live', type: 'radio', checked: mode === 'off', click: () => setEcoMode('off') },
+    { label: 'Eco – only the account you click stays live', type: 'radio', checked: mode === 'eco', click: () => setEcoMode('eco') },
+    { label: 'Farming – hide all screens, keep farming', type: 'radio', checked: mode === 'farming', click: () => setEcoMode('farming') },
+    { type: 'separator' },
+    header('Hidden screens show'),
+    ...ECO_INTERVALS.map((n) => ({
+      label: n === 0 ? 'Farming card' : `A picture, refreshed every ${n}s`,
+      type: 'radio' as const,
+      checked: prefs.ecoInterval === n,
+      click: () => setPrefs({ ecoInterval: n })
+    })),
+    { type: 'separator' },
+    {
+      label: 'In Eco, hide the live screen',
+      submenu: ECO_IDLE_MINUTES.map((n) => ({
+        label: n === 0 ? 'Never' : `After ${n} minute${n > 1 ? 's' : ''} without use`,
+        type: 'radio' as const,
+        checked: prefs.ecoIdleMinutes === n,
+        click: () => setPrefs({ ecoIdleMinutes: n })
+      }))
+    },
+    {
+      label: 'Turn on Eco automatically on battery',
+      type: 'checkbox',
+      checked: prefs.ecoOnBattery,
+      click: (item) => setPrefs({ ecoOnBattery: item.checked })
+    }
+  ])
 }
 
 function zoomActive(delta: number): void {
@@ -160,7 +218,7 @@ function buildMenu(): void {
             click: () => setPrefs({ ecoIdleMinutes: n })
           }))
         },
-        { label: 'Pause all accounts (keep farming)', accelerator: 'CmdOrCtrl+Shift+E', click: pauseAll },
+        { label: 'Hide all screens (keep farming)', accelerator: 'CmdOrCtrl+Shift+E', click: () => setEcoMode('farming') },
         { type: 'separator' },
         {
           label: 'Auto-recover stuck accounts',
@@ -262,11 +320,14 @@ function registerIpc(): void {
     update: updater.getState(),
     eco: ecoState()
   }))
+  ipcMain.handle('panel:get-config', () => store.panel)
   ipcMain.handle('panel:set-prefs', (_e, patch: Partial<PanelPrefs>) => setPrefs(patch))
   ipcMain.on('panel:set-live', (_e, id: number | null) => {
     if (id === null || (Number.isInteger(id) && id >= 0 && id < SLOT_COUNT)) slots.setLive(id)
   })
-  ipcMain.on('panel:pause-all', pauseAll)
+  ipcMain.on('panel:eco-menu', (_e, x: number, y: number) => {
+    if (!win.isDestroyed()) ecoMenu().popup({ window: win, x: Math.round(x), y: Math.round(y) })
+  })
   ipcMain.on('panel:update-action', (_e, action: UpdateAction) => {
     if (action === 'check') void updater.check(true)
     else if (action === 'install') updater.install()

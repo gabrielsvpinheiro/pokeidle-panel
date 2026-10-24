@@ -3,6 +3,7 @@ import type { EcoState, PanelApi, PanelCommand, SlotStatus, Snapshot, UpdateStat
 
 const api: PanelApi = {
   getState: () => ipcRenderer.invoke('panel:get-state'),
+  getConfig: () => ipcRenderer.invoke('panel:get-config'),
   updateSlot: (id, patch) => ipcRenderer.invoke('panel:update-slot', id, patch),
   setLayout: (layout) => ipcRenderer.invoke('panel:set-layout', layout),
   updateAction: (action) => ipcRenderer.send('panel:update-action', action),
@@ -13,7 +14,7 @@ const api: PanelApi = {
   },
   setPrefs: (patch) => ipcRenderer.invoke('panel:set-prefs', patch),
   setLive: (id) => ipcRenderer.send('panel:set-live', id),
-  pauseAll: () => ipcRenderer.send('panel:pause-all'),
+  openEcoMenu: (x, y) => ipcRenderer.send('panel:eco-menu', x, y),
   onEco: (cb) => {
     const handler = (_: unknown, state: EcoState) => cb(state)
     ipcRenderer.on('panel:eco', handler)

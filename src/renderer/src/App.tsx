@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { SLOT_COUNT, clampZoom, type LayoutConfig, type PanelConfig, type SlotConfig, type SlotRects, type SlotStatus, type Snapshot, type TileCount, type UpdateState, type EcoState, type UsageReport } from '@shared/types'
 import { Ball } from './Ball'
-import { IconKeyboard, IconLayout, IconLeaf, IconPause } from './Icons'
+import { IconChevron, IconKeyboard, IconLayout, IconLeaf } from './Icons'
 import { Settings } from './Settings'
 import { Shortcuts } from './Shortcuts'
 import { Tile } from './Tile'
@@ -107,6 +107,7 @@ export function App() {
         else if (cmd.type === 'focus') updateLayout({ mode: 'focus', focused: cmd.slot })
         else if (cmd.type === 'zoom') zoomSlot(cmd.slot, cmd.delta)
         else if (cmd.type === 'shortcuts') setShortcutsOpen(true)
+        else if (cmd.type === 'reload-config') void window.panel.getConfig().then(setConfig)
       }),
     [updateLayout, zoomSlot]
   )
@@ -240,9 +241,9 @@ export function App() {
       frozen={slot.enabled && isFrozen(slot.id)}
       usage={usage?.slots[slot.id] ?? null}
       snapshot={eco.cards ? null : snapshots[slot.id] ?? null}
-      onPause={eco.active && eco.live === slot.id ? () => window.panel.setLive(null) : undefined}
+      onHide={slot.enabled && !isFrozen(slot.id) ? () => void updateSlot(slot.id, { hidden: true }) : undefined}
       now={now}
-      onWake={() => window.panel.setLive(slot.id)}
+      onWake={() => wake(slot.id)}
       onGripPointerDown={layout.mode === 'grid' && layout.count > 1 ? beginMove(slot.id) : undefined}
       moveState={moving ? (moving.id === slot.id ? 'source' : moving.over === slot.id ? 'target' : 'idle') : null}
       onSettings={() => setSettingsFor(slot.id)}
@@ -259,14 +260,29 @@ export function App() {
         })()
 
   const shownIds = new Set(shown.map((s) => s.id))
-  const isFrozen = (id: number) => eco.active && id !== eco.live
+  const isFrozen = (id: number) => slots[id].hidden || (eco.active && id !== eco.live)
 
-  const toggleEco = () => {
-    if (!config) return
-    const patch = eco.active ? { eco: false, ...(eco.byBattery ? { ecoOnBattery: false } : {}) } : { eco: true }
-    setConfig({ ...config, prefs: { ...config.prefs, ...patch } })
-    void window.panel.setPrefs(patch)
+  const enabledSlots = slots.filter((s) => s.enabled)
+  const hiddenCount = enabledSlots.filter((s) => s.hidden).length
+  const ecoLabel =
+    enabledSlots.length > 0 && hiddenCount === enabledSlots.length
+      ? 'Farming'
+      : eco.active
+        ? 'On'
+        : hiddenCount > 0
+          ? `${hiddenCount} hidden`
+          : 'Off'
+
+  const openEcoMenu = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const r = e.currentTarget.getBoundingClientRect()
+    window.panel.openEcoMenu(r.left, r.bottom + 6)
   }
+
+  const wake = (id: number) => {
+    if (slots[id].hidden) void updateSlot(id, { hidden: false })
+    window.panel.setLive(id)
+  }
+
   for (let id = 0; id < SLOT_COUNT; id++) {
     if (!shownIds.has(id)) contentRefs.current[id] = null
   }
@@ -346,29 +362,19 @@ export function App() {
         )}
 
         <button
-          className={`eco-btn${eco.active ? ' active' : ''}`}
-          onClick={toggleEco}
-          aria-pressed={eco.active}
+          className={`eco-btn${ecoLabel === 'Off' ? '' : ' active'}`}
+          onClick={openEcoMenu}
+          aria-haspopup="menu"
           title={
-            eco.active
-              ? eco.byBattery
-                ? 'Eco mode is on because the Mac is on battery. Click to turn it off.'
-                : 'Eco mode is on: only the account you click stays live, the others refresh as pictures. Click to turn off.'
-              : 'Eco mode: keep only the clicked account live and refresh the others as pictures to save energy (Ctrl/Cmd+E)'
+            eco.byBattery
+              ? 'Energy saving (Eco is on because the Mac is on battery). Click for all options.'
+              : 'Energy saving: choose All live, Eco or Farming, and what hidden screens show'
           }
         >
           <IconLeaf />
           <span>Eco</span>
-        </button>
-
-        <button
-          className="pause-all-btn"
-          onClick={() => window.panel.pauseAll()}
-          disabled={eco.active && eco.live === null}
-          title="Pause all accounts: show the Farming screen while they keep farming in the background (Ctrl/Cmd+Shift+E)"
-          aria-label="Pause all accounts"
-        >
-          <IconPause />
+          <span className="eco-state">{ecoLabel}</span>
+          <IconChevron />
         </button>
 
         <button className="help-btn" onClick={() => setShortcutsOpen(true)} title="Keyboard shortcuts (Ctrl/Cmd + /)" aria-label="Keyboard shortcuts">

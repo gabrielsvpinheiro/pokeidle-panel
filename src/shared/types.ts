@@ -8,6 +8,7 @@ export interface SlotConfig {
   muted: boolean
   proxy: string
   zoom: number
+  hidden: boolean
 }
 
 export const ZOOM_MIN = 0.5
@@ -44,6 +45,8 @@ export interface PanelPrefs {
   ecoInterval: EcoInterval
   ecoIdleMinutes: EcoIdleMinutes
 }
+
+export type EcoMode = 'off' | 'eco' | 'farming'
 
 export interface EcoState {
   active: boolean
@@ -89,6 +92,7 @@ export type PanelCommand =
   | { type: 'focus'; slot: number }
   | { type: 'zoom'; slot: number; delta: number }
   | { type: 'shortcuts' }
+  | { type: 'reload-config' }
 
 export type UpdateState =
   | { kind: 'idle' }
@@ -102,6 +106,7 @@ export type UpdateState =
 export type UpdateAction = 'check' | 'install' | 'download'
 
 export interface PanelApi {
+  getConfig(): Promise<PanelConfig>
   getState(): Promise<{
     config: PanelConfig
     statuses: Record<number, SlotStatus>
@@ -112,7 +117,7 @@ export interface PanelApi {
   }>
   setPrefs(patch: Partial<PanelPrefs>): Promise<void>
   setLive(id: number | null): void
-  pauseAll(): void
+  openEcoMenu(x: number, y: number): void
   onEco(cb: (state: EcoState) => void): () => void
   onSnapshot(cb: (id: number, snapshot: Snapshot) => void): () => void
   onUsage(cb: (report: UsageReport) => void): () => void

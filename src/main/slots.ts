@@ -118,7 +118,7 @@ export class SlotManager {
     this.ecoInterval = options.interval
     if (this.snapshotTimer) clearInterval(this.snapshotTimer)
     this.snapshotTimer =
-      options.active && options.interval > 0
+      options.interval > 0
         ? setInterval(() => {
             for (const id of this.frozen) void this.snapshot(id)
           }, options.interval * 1000)
@@ -135,6 +135,12 @@ export class SlotManager {
       this.setLive(this.lastFocused !== null && shown.includes(this.lastFocused) ? this.lastFocused : shown[0] ?? null)
     }
     this.applyBounds()
+  }
+
+  wakeDefault(): void {
+    if (this.live !== null) return
+    const shown = this.shownIds()
+    this.setLive(this.lastFocused !== null && shown.includes(this.lastFocused) ? this.lastFocused : shown[0] ?? null)
   }
 
   setLive(id: number | null): void {
@@ -363,7 +369,8 @@ export class SlotManager {
 
   private applyBounds(): void {
     const shown = this.shownIds()
-    const frozen = new Set(this.eco ? shown.filter((id) => id !== this.live) : [])
+    const slots = this.getConfig().slots
+    const frozen = new Set(shown.filter((id) => slots[id]?.hidden || (this.eco && id !== this.live)))
     for (const [id, view] of this.views) {
       const rect = this.rects[id]
       if (!rect || rect.width < 2 || rect.height < 2) {

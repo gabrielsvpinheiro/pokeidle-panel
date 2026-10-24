@@ -262,6 +262,8 @@ kbd {
 }
 .eco-btn:hover { background: #12141d; }
 .eco-btn.active { background: #3ddc84; color: #0d2a19; border-color: #0d2a19; }
+.eco-state { padding: 1px 8px; border-radius: 999px; background: #ffffff1f; font-size: 11px; font-weight: 700; }
+.eco-btn.active .eco-state { background: #0d2a1926; }
 .eco-btn:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
 .eco-frame {
   position: absolute; inset: 0; padding: 0; border: 0; cursor: pointer;
@@ -293,10 +295,3 @@ kbd {
 .farm-hint { margin-top: 4px; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); font-size: 11px; font-weight: 600; }
 .farm-card:hover .farm-hint { background: #3ddc84; border-color: #3ddc84; color: #0d2a19; }
 .farm-card:focus-visible { outline: 2px solid var(--yellow); outline-offset: -4px; }
-.pause-all-btn {
-  display: grid; place-items: center; width: 34px; height: 34px; padding: 0;
-  background: #12141dcc; border: 2px solid #12141d; border-radius: 999px; color: #fff;
-}
-.pause-all-btn:hover:not(:disabled) { background: #12141d; }
-.pause-all-btn:disabled { opacity: .45; cursor: default; }
-.pause-all-btn:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }

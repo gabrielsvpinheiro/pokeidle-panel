@@ -46,8 +46,14 @@ export const IconKeyboard = () => (
 export const IconLeaf = () => (
   <svg {...base}><path d="M5 19c0-8 5-14 15-15-1 10-7 15-15 15z" /><path d="M5 19 13 11" /></svg>
 )
-export const IconPause = () => (
-  <svg {...base}><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>
+export const IconChevron = () => (
+  <svg {...base} width={12} height={12}><path d="m6 9 6 6 6-6" /></svg>
+)
+export const IconEyeOff = () => (
+  <svg {...base}>
+    <path d="M10.6 5.1A10 10 0 0 1 12 5c6 0 9.5 7 9.5 7a17 17 0 0 1-2.6 3.4M6.6 6.6C3.9 8.3 2.5 12 2.5 12s3.5 7 9.5 7a9.7 9.7 0 0 0 5.4-1.6" />
+    <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2M3 3l18 18" />
+  </svg>
 )
 export const IconDownload = () => (
   <svg {...base}><path d="M12 3v12M7 10l5 5 5-5M5 21h14" /></svg>
