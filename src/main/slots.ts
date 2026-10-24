@@ -190,7 +190,6 @@ export class SlotManager {
     const view = new WebContentsView({
       webPreferences: {
         session: ses,
-        backgroundThrottling: false,
         contextIsolation: true,
         nodeIntegration: false,
         sandbox: true
