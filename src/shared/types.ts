@@ -30,8 +30,11 @@ export interface LayoutConfig {
   rowRatios: [number, number]
 }
 
-export const ECO_INTERVALS = [5, 15, 30, 60] as const
+export const ECO_INTERVALS = [0, 5, 15, 30, 60] as const
 export type EcoInterval = (typeof ECO_INTERVALS)[number]
+
+export const ECO_IDLE_MINUTES = [0, 1, 2, 5, 10] as const
+export type EcoIdleMinutes = (typeof ECO_IDLE_MINUTES)[number]
 
 export interface PanelPrefs {
   autoReload: boolean
@@ -39,11 +42,13 @@ export interface PanelPrefs {
   eco: boolean
   ecoOnBattery: boolean
   ecoInterval: EcoInterval
+  ecoIdleMinutes: EcoIdleMinutes
 }
 
 export interface EcoState {
   active: boolean
   byBattery: boolean
+  cards: boolean
   live: number | null
 }
 
@@ -106,7 +111,8 @@ export interface PanelApi {
     eco: EcoState
   }>
   setPrefs(patch: Partial<PanelPrefs>): Promise<void>
-  setLive(id: number): void
+  setLive(id: number | null): void
+  pauseAll(): void
   onEco(cb: (state: EcoState) => void): () => void
   onSnapshot(cb: (id: number, snapshot: Snapshot) => void): () => void
   onUsage(cb: (report: UsageReport) => void): () => void

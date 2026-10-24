@@ -9,6 +9,7 @@ const PROBE_INTERVAL = 30_000
 const HANG_TIMEOUT = 30_000
 const RETRY_BASE = 15_000
 const RETRY_MAX = 300_000
+const IDLE_CHECK_INTERVAL = 15_000
 
 export interface SlotHooks {
   status: (id: number, status: SlotStatus, since: number) => void
@@ -16,6 +17,12 @@ export interface SlotHooks {
   zoom: (id: number, delta: number) => void
   live: (id: number | null) => void
   snapshot: (id: number, snapshot: Snapshot) => void
+}
+
+export interface EcoOptions {
+  active: boolean
+  interval: number
+  idleMinutes: number
 }
 
 interface Retry {
@@ -38,6 +45,9 @@ export class SlotManager {
   private live: number | null = null
   private frozen = new Set<number>()
   private snapshotTimer: NodeJS.Timeout | null = null
+  private idleTimer: NodeJS.Timeout | null = null
+  private ecoInterval = 15
+  private lastInput = Date.now()
   private capturing = new Set<number>()
 
   constructor(
@@ -102,15 +112,25 @@ export class SlotManager {
     return this.live
   }
 
-  setEco(active: boolean, intervalSeconds: number): void {
-    this.eco = active
+  setEco(options: EcoOptions): void {
+    const turningOn = options.active && !this.eco
+    this.eco = options.active
+    this.ecoInterval = options.interval
     if (this.snapshotTimer) clearInterval(this.snapshotTimer)
-    this.snapshotTimer = active
-      ? setInterval(() => {
-          for (const id of this.frozen) void this.snapshot(id)
-        }, intervalSeconds * 1000)
-      : null
-    if (active && (this.live === null || !this.shownIds().includes(this.live))) {
+    this.snapshotTimer =
+      options.active && options.interval > 0
+        ? setInterval(() => {
+            for (const id of this.frozen) void this.snapshot(id)
+          }, options.interval * 1000)
+        : null
+    if (this.idleTimer) clearInterval(this.idleTimer)
+    this.idleTimer =
+      options.active && options.idleMinutes > 0
+        ? setInterval(() => {
+            if (this.live !== null && Date.now() - this.lastInput > options.idleMinutes * 60_000) this.setLive(null)
+          }, IDLE_CHECK_INTERVAL)
+        : null
+    if (turningOn) {
       const shown = this.shownIds()
       this.setLive(this.lastFocused !== null && shown.includes(this.lastFocused) ? this.lastFocused : shown[0] ?? null)
     }
@@ -118,6 +138,7 @@ export class SlotManager {
   }
 
   setLive(id: number | null): void {
+    this.lastInput = Date.now()
     if (this.live === id) return
     this.live = id
     this.hooks.live(id)
@@ -178,6 +199,7 @@ export class SlotManager {
   destroyAll(): void {
     clearInterval(this.probeTimer)
     if (this.snapshotTimer) clearInterval(this.snapshotTimer)
+    if (this.idleTimer) clearInterval(this.idleTimer)
     for (const id of [...this.views.keys()]) this.destroy(id)
   }
 
@@ -293,6 +315,9 @@ export class SlotManager {
     wc.on('focus', () => {
       this.lastFocused = id
     })
+    wc.on('input-event', () => {
+      if (this.live === id) this.lastInput = Date.now()
+    })
     wc.on('zoom-changed', (_e, direction) => this.hooks.zoom(id, direction === 'in' ? 0.1 : -0.1))
 
     wc.on('unresponsive', () => {
@@ -338,8 +363,7 @@ export class SlotManager {
 
   private applyBounds(): void {
     const shown = this.shownIds()
-    const live = shown.length === 1 ? shown[0] : this.live
-    const frozen = new Set(this.eco ? shown.filter((id) => id !== live) : [])
+    const frozen = new Set(this.eco ? shown.filter((id) => id !== this.live) : [])
     for (const [id, view] of this.views) {
       const rect = this.rects[id]
       if (!rect || rect.width < 2 || rect.height < 2) {
@@ -356,6 +380,6 @@ export class SlotManager {
     }
     const newlyFrozen = [...frozen].filter((id) => !this.frozen.has(id))
     this.frozen = frozen
-    for (const id of newlyFrozen) void this.snapshot(id)
+    if (this.ecoInterval > 0) for (const id of newlyFrozen) void this.snapshot(id)
   }
 }

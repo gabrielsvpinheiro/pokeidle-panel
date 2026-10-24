@@ -1,7 +1,7 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { ZOOM_MAX, ZOOM_MIN, ZOOM_STEP, type SlotConfig, type SlotStatus, type Snapshot, type Usage } from '@shared/types'
 import { Ball } from './Ball'
-import { IconCamera, IconExpand, IconLeaf, IconGrid, IconMute, IconReload, IconSettings, IconSound, IconZoomIn, IconZoomOut } from './Icons'
+import { IconCamera, IconExpand, IconLeaf, IconPause, IconGrid, IconMute, IconReload, IconSettings, IconSound, IconZoomIn, IconZoomOut } from './Icons'
 
 const STATUS_LABEL: Record<SlotStatus, string> = {
   idle: 'Empty',
@@ -74,6 +74,7 @@ interface Props {
   snapshot: Snapshot | null
   now: number
   onWake: () => void
+  onPause?: () => void
   moveState: 'source' | 'target' | 'idle' | null
   onSettings: () => void
   onActivate: () => void
@@ -172,6 +173,14 @@ export function Tile(p: Props) {
             {p.usage.cpu}% · {p.usage.memory >= 1024 ? `${(p.usage.memory / 1024).toFixed(1)} GB` : `${p.usage.memory} MB`}
           </span>
         )}
+        {p.onPause && (
+          <ActionButton
+            icon={<IconPause />}
+            hint="Pause: show the Farming screen, keeps farming in the background"
+            onHint={setHint}
+            onClick={p.onPause}
+          />
+        )}
         {slot.enabled && (
           <>
             <ActionButton
@@ -225,13 +234,23 @@ export function Tile(p: Props) {
         />
       </div>
       <div className="tile-body" ref={slot.enabled ? p.registerContent : undefined}>
-        {p.frozen && !p.moveState && (
+        {p.frozen && !p.moveState && slot.enabled && p.snapshot && (
           <button className="eco-frame" onClick={p.onWake} title="Eco mode: click to make this account live">
-            {p.snapshot && <img src={p.snapshot.url} alt="" draggable={false} />}
+            <img src={p.snapshot.url} alt="" draggable={false} />
             <span className="eco-badge">
               <IconLeaf />
-              {p.snapshot ? `Eco · updated ${formatAgo(p.now - p.snapshot.at)} · click to play` : 'Eco · click to play'}
+              Eco · updated {formatAgo(p.now - p.snapshot.at)} · click to play
             </span>
+          </button>
+        )}
+        {p.frozen && !p.moveState && slot.enabled && !p.snapshot && (
+          <button className="farm-card" onClick={p.onWake} title="This account keeps farming in the background. Click to play it.">
+            <Ball slot={slot.id} size={56} />
+            <strong>Farming…</strong>
+            <span className="farm-status">
+              {p.onlineFor !== null ? `Online · ${formatDuration(p.onlineFor)}` : STATUS_LABEL[status]}
+            </span>
+            <span className="farm-hint">Click to play</span>
           </button>
         )}
         {p.moveState && (

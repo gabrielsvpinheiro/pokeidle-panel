@@ -13,6 +13,7 @@ const api: PanelApi = {
   },
   setPrefs: (patch) => ipcRenderer.invoke('panel:set-prefs', patch),
   setLive: (id) => ipcRenderer.send('panel:set-live', id),
+  pauseAll: () => ipcRenderer.send('panel:pause-all'),
   onEco: (cb) => {
     const handler = (_: unknown, state: EcoState) => cb(state)
     ipcRenderer.on('panel:eco', handler)

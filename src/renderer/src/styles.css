@@ -282,3 +282,21 @@ kbd {
   padding: 6px 10px; border-radius: 999px; background: #12141dcc; border: 2px solid #12141d;
   color: #fff; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap;
 }
+
+.farm-card {
+  position: absolute; inset: 0; padding: 16px; border: 0; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  background: radial-gradient(circle at 50% 40%, #1d2236 0%, #0b0c12 70%); color: var(--text);
+}
+.farm-card strong { font: 400 14px 'Press Start 2P', monospace; color: #9ff0c3; letter-spacing: 1px; }
+.farm-status { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.farm-hint { margin-top: 4px; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); font-size: 11px; font-weight: 600; }
+.farm-card:hover .farm-hint { background: #3ddc84; border-color: #3ddc84; color: #0d2a19; }
+.farm-card:focus-visible { outline: 2px solid var(--yellow); outline-offset: -4px; }
+.pause-all-btn {
+  display: grid; place-items: center; width: 34px; height: 34px; padding: 0;
+  background: #12141dcc; border: 2px solid #12141d; border-radius: 999px; color: #fff;
+}
+.pause-all-btn:hover:not(:disabled) { background: #12141d; }
+.pause-all-btn:disabled { opacity: .45; cursor: default; }
+.pause-all-btn:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }

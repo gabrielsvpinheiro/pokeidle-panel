@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ClipboardItem, Menu, Notification, clipboard, ipcMain, powerMonitor, powerSaveBlocker, shell, type MenuItemConstructorOptions } from 'electron'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import { ECO_INTERVALS, SLOT_COUNT, ZOOM_STEP, type EcoState, type PanelCommand, type PanelPrefs, type UsageReport, type UpdateAction, type LayoutConfig, type SlotConfig, type SlotRects } from '@shared/types'
+import { ECO_IDLE_MINUTES, ECO_INTERVALS, SLOT_COUNT, ZOOM_STEP, type EcoState, type PanelCommand, type PanelPrefs, type UsageReport, type UpdateAction, type LayoutConfig, type SlotConfig, type SlotRects } from '@shared/types'
 import { flushConfig, loadConfig, saveConfig, sanitizeConfig, type StoredFile } from './config'
 import { SlotManager } from './slots'
 import { Updater } from './updater'
@@ -47,13 +47,13 @@ async function saveScreenshot(id: number): Promise<string | null> {
 function ecoState(): EcoState {
   const prefs = store.panel.prefs
   const byBattery = !prefs.eco && prefs.ecoOnBattery && powerMonitor.isOnBatteryPower()
-  return { active: prefs.eco || byBattery, byBattery, live: slots?.getLive() ?? null }
+  return { active: prefs.eco || byBattery, byBattery, cards: prefs.ecoInterval === 0, live: slots?.getLive() ?? null }
 }
 
 function applyEco(): void {
   if (!slots) return
   const state = ecoState()
-  slots.setEco(state.active, store.panel.prefs.ecoInterval)
+  slots.setEco({ active: state.active, interval: store.panel.prefs.ecoInterval, idleMinutes: store.panel.prefs.ecoIdleMinutes })
   send('panel:eco', ecoState())
 }
 
@@ -83,6 +83,11 @@ function setPrefs(patch: Partial<PanelPrefs>): void {
   persist()
   buildMenu()
   applyEco()
+}
+
+function pauseAll(): void {
+  if (!ecoState().active) setPrefs({ eco: true })
+  slots.setLive(null)
 }
 
 function zoomActive(delta: number): void {
@@ -140,12 +145,22 @@ function buildMenu(): void {
         {
           label: 'Eco refresh',
           submenu: ECO_INTERVALS.map((n) => ({
-            label: `Every ${n} seconds`,
+            label: n === 0 ? 'Off – show the Farming card' : `Picture every ${n} seconds`,
             type: 'radio' as const,
             checked: store.panel.prefs.ecoInterval === n,
             click: () => setPrefs({ ecoInterval: n })
           }))
         },
+        {
+          label: 'Auto-pause the live account',
+          submenu: ECO_IDLE_MINUTES.map((n) => ({
+            label: n === 0 ? 'Never' : `After ${n} minute${n > 1 ? 's' : ''} without input`,
+            type: 'radio' as const,
+            checked: store.panel.prefs.ecoIdleMinutes === n,
+            click: () => setPrefs({ ecoIdleMinutes: n })
+          }))
+        },
+        { label: 'Pause all accounts (keep farming)', accelerator: 'CmdOrCtrl+Shift+E', click: pauseAll },
         { type: 'separator' },
         {
           label: 'Auto-recover stuck accounts',
@@ -248,9 +263,10 @@ function registerIpc(): void {
     eco: ecoState()
   }))
   ipcMain.handle('panel:set-prefs', (_e, patch: Partial<PanelPrefs>) => setPrefs(patch))
-  ipcMain.on('panel:set-live', (_e, id: number) => {
-    if (Number.isInteger(id) && id >= 0 && id < SLOT_COUNT) slots.setLive(id)
+  ipcMain.on('panel:set-live', (_e, id: number | null) => {
+    if (id === null || (Number.isInteger(id) && id >= 0 && id < SLOT_COUNT)) slots.setLive(id)
   })
+  ipcMain.on('panel:pause-all', pauseAll)
   ipcMain.on('panel:update-action', (_e, action: UpdateAction) => {
     if (action === 'check') void updater.check(true)
     else if (action === 'install') updater.install()

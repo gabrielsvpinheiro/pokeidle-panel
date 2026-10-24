@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { SLOT_COUNT, clampZoom, type LayoutConfig, type PanelConfig, type SlotConfig, type SlotRects, type SlotStatus, type Snapshot, type TileCount, type UpdateState, type EcoState, type UsageReport } from '@shared/types'
 import { Ball } from './Ball'
-import { IconKeyboard, IconLayout, IconLeaf } from './Icons'
+import { IconKeyboard, IconLayout, IconLeaf, IconPause } from './Icons'
 import { Settings } from './Settings'
 import { Shortcuts } from './Shortcuts'
 import { Tile } from './Tile'
@@ -21,7 +21,7 @@ export function App() {
   const [since, setSince] = useState<Record<number, number>>({})
   const [now, setNow] = useState(Date.now())
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
-  const [eco, setEco] = useState<EcoState>({ active: false, byBattery: false, live: null })
+  const [eco, setEco] = useState<EcoState>({ active: false, byBattery: false, cards: false, live: null })
   const [usage, setUsage] = useState<UsageReport | null>(null)
   const [snapshots, setSnapshots] = useState<Record<number, Snapshot>>({})
   const [moving, setMoving] = useState<{ id: number; over: number | null } | null>(null)
@@ -64,6 +64,13 @@ export function App() {
     const tick = setInterval(() => setNow(Date.now()), eco.active ? 5_000 : 30_000)
     return () => clearInterval(tick)
   }, [eco.active])
+
+  const ecoRef = useRef(eco)
+  ecoRef.current = eco
+  const focusTarget = config?.layout.mode === 'focus' ? config.layout.focused : null
+  useEffect(() => {
+    if (focusTarget !== null && ecoRef.current.active) window.panel.setLive(focusTarget)
+  }, [focusTarget])
 
   const updateLayout = useCallback((patch: Partial<LayoutConfig>) => {
     setConfig((prev) => {
@@ -232,7 +239,8 @@ export function App() {
       onScreenshot={() => window.panel.screenshot(slot.id)}
       frozen={slot.enabled && isFrozen(slot.id)}
       usage={usage?.slots[slot.id] ?? null}
-      snapshot={snapshots[slot.id] ?? null}
+      snapshot={eco.cards ? null : snapshots[slot.id] ?? null}
+      onPause={eco.active && eco.live === slot.id ? () => window.panel.setLive(null) : undefined}
       now={now}
       onWake={() => window.panel.setLive(slot.id)}
       onGripPointerDown={layout.mode === 'grid' && layout.count > 1 ? beginMove(slot.id) : undefined}
@@ -251,8 +259,7 @@ export function App() {
         })()
 
   const shownIds = new Set(shown.map((s) => s.id))
-  const liveId = shown.length === 1 ? shown[0].id : eco.live
-  const isFrozen = (id: number) => eco.active && shown.length > 1 && id !== liveId
+  const isFrozen = (id: number) => eco.active && id !== eco.live
 
   const toggleEco = () => {
     if (!config) return
@@ -352,6 +359,16 @@ export function App() {
         >
           <IconLeaf />
           <span>Eco</span>
+        </button>
+
+        <button
+          className="pause-all-btn"
+          onClick={() => window.panel.pauseAll()}
+          disabled={eco.active && eco.live === null}
+          title="Pause all accounts: show the Farming screen while they keep farming in the background (Ctrl/Cmd+Shift+E)"
+          aria-label="Pause all accounts"
+        >
+          <IconPause />
         </button>
 
         <button className="help-btn" onClick={() => setShortcutsOpen(true)} title="Keyboard shortcuts (Ctrl/Cmd + /)" aria-label="Keyboard shortcuts">

@@ -2,7 +2,7 @@ import { app } from 'electron'
 import { readFileSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { ECO_INTERVALS, SLOT_COUNT, clampZoom, type EcoInterval, type PanelConfig } from '@shared/types'
+import { ECO_IDLE_MINUTES, ECO_INTERVALS, SLOT_COUNT, clampZoom, type EcoIdleMinutes, type EcoInterval, type PanelConfig } from '@shared/types'
 
 export interface StoredFile {
   panel: PanelConfig
@@ -23,7 +23,7 @@ export function defaults(): StoredFile {
         zoom: 1
       })),
       layout: { mode: 'grid', count: 4, order: [0, 1, 2, 3], focused: 0, colRatio: 0.5, rowRatios: [0.5, 0.5] },
-      prefs: { autoReload: true, notifications: true, eco: false, ecoOnBattery: true, ecoInterval: 15 }
+      prefs: { autoReload: true, notifications: true, eco: false, ecoOnBattery: true, ecoInterval: 15, ecoIdleMinutes: 2 }
     },
     window: { width: 1480, height: 920, maximized: false }
   }
@@ -59,7 +59,8 @@ function sanitize(raw: Partial<StoredFile>): StoredFile {
         notifications: p?.notifications !== false,
         eco: p?.eco === true,
         ecoOnBattery: p?.ecoOnBattery !== false,
-        ecoInterval: ECO_INTERVALS.includes(p?.ecoInterval as EcoInterval) ? (p!.ecoInterval as EcoInterval) : 15
+        ecoInterval: ECO_INTERVALS.includes(p?.ecoInterval as EcoInterval) ? (p!.ecoInterval as EcoInterval) : 15,
+        ecoIdleMinutes: ECO_IDLE_MINUTES.includes(p?.ecoIdleMinutes as EcoIdleMinutes) ? (p!.ecoIdleMinutes as EcoIdleMinutes) : 2
       },
       layout: {
         mode: l?.mode === 'focus' ? 'focus' : 'grid',
