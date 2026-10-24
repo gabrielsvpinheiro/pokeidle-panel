@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { SLOT_COUNT, clampZoom, type LayoutConfig, type PanelConfig, type SlotConfig, type SlotRects, type SlotStatus, type TileCount, type UpdateState } from '@shared/types'
+import { SLOT_COUNT, clampZoom, type LayoutConfig, type PanelConfig, type SlotConfig, type SlotRects, type SlotStatus, type Snapshot, type TileCount, type UpdateState, type EcoState } from '@shared/types'
 import { Ball } from './Ball'
-import { IconKeyboard, IconLayout } from './Icons'
+import { IconKeyboard, IconLayout, IconLeaf } from './Icons'
 import { Settings } from './Settings'
 import { Shortcuts } from './Shortcuts'
 import { Tile } from './Tile'
@@ -19,6 +19,8 @@ export function App() {
   const [since, setSince] = useState<Record<number, number>>({})
   const [now, setNow] = useState(Date.now())
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
+  const [eco, setEco] = useState<EcoState>({ active: false, byBattery: false, live: null })
+  const [snapshots, setSnapshots] = useState<Record<number, Snapshot>>({})
   const [moving, setMoving] = useState<{ id: number; over: number | null } | null>(null)
   const [settingsFor, setSettingsFor] = useState<number | null>(null)
   const [dragging, setDragging] = useState(false)
@@ -36,19 +38,27 @@ export function App() {
       setSince(s.since)
       setVersion(s.version)
       setUpdate(s.update)
+      setEco(s.eco)
     })
     const offStatus = window.panel.onStatus((id, status, at) => {
       setStatuses((prev) => ({ ...prev, [id]: status }))
       setSince((prev) => ({ ...prev, [id]: at }))
     })
-    const tick = setInterval(() => setNow(Date.now()), 30_000)
+    const offEco = window.panel.onEco(setEco)
+    const offSnapshot = window.panel.onSnapshot((id, snap) => setSnapshots((prev) => ({ ...prev, [id]: snap })))
     const offUpdate = window.panel.onUpdate(setUpdate)
     return () => {
       offStatus()
       offUpdate()
-      clearInterval(tick)
+      offEco()
+      offSnapshot()
     }
   }, [])
+
+  useEffect(() => {
+    const tick = setInterval(() => setNow(Date.now()), eco.active ? 5_000 : 30_000)
+    return () => clearInterval(tick)
+  }, [eco.active])
 
   const updateLayout = useCallback((patch: Partial<LayoutConfig>) => {
     setConfig((prev) => {
@@ -215,6 +225,10 @@ export function App() {
       onZoom={(delta) => zoomSlot(slot.id, delta)}
       onRename={(name) => void updateSlot(slot.id, { name })}
       onScreenshot={() => window.panel.screenshot(slot.id)}
+      frozen={slot.enabled && isFrozen(slot.id)}
+      snapshot={snapshots[slot.id] ?? null}
+      now={now}
+      onWake={() => window.panel.setLive(slot.id)}
       onGripPointerDown={layout.mode === 'grid' && layout.count > 1 ? beginMove(slot.id) : undefined}
       moveState={moving ? (moving.id === slot.id ? 'source' : moving.over === slot.id ? 'target' : 'idle') : null}
       onSettings={() => setSettingsFor(slot.id)}
@@ -231,6 +245,15 @@ export function App() {
         })()
 
   const shownIds = new Set(shown.map((s) => s.id))
+  const liveId = shown.length === 1 ? shown[0].id : eco.live
+  const isFrozen = (id: number) => eco.active && shown.length > 1 && id !== liveId
+
+  const toggleEco = () => {
+    if (!config) return
+    const patch = eco.active ? { eco: false, ...(eco.byBattery ? { ecoOnBattery: false } : {}) } : { eco: true }
+    setConfig({ ...config, prefs: { ...config.prefs, ...patch } })
+    void window.panel.setPrefs(patch)
+  }
   for (let id = 0; id < SLOT_COUNT; id++) {
     if (!shownIds.has(id)) contentRefs.current[id] = null
   }
@@ -299,6 +322,22 @@ export function App() {
             </button>
           ))}
         </nav>
+
+        <button
+          className={`eco-btn${eco.active ? ' active' : ''}`}
+          onClick={toggleEco}
+          aria-pressed={eco.active}
+          title={
+            eco.active
+              ? eco.byBattery
+                ? 'Eco mode is on because the Mac is on battery. Click to turn it off.'
+                : 'Eco mode is on: only the account you click stays live, the others refresh as pictures. Click to turn off.'
+              : 'Eco mode: keep only the clicked account live and refresh the others as pictures to save energy (Ctrl/Cmd+E)'
+          }
+        >
+          <IconLeaf />
+          <span>Eco</span>
+        </button>
 
         <button className="help-btn" onClick={() => setShortcutsOpen(true)} title="Keyboard shortcuts (Ctrl/Cmd + /)" aria-label="Keyboard shortcuts">
           <IconKeyboard />

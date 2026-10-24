@@ -1,5 +1,5 @@
 import { BrowserWindow, WebContentsView, session, type NativeImage, type Session } from 'electron'
-import { GAME_URL, type PanelConfig, type SlotRects, type SlotStatus } from '@shared/types'
+import { GAME_URL, type PanelConfig, type SlotRects, type SlotStatus, type Snapshot } from '@shared/types'
 import { parseProxy } from './proxy'
 
 const partitionOf = (id: number): string => `persist:account-${id}`
@@ -14,6 +14,8 @@ export interface SlotHooks {
   status: (id: number, status: SlotStatus, since: number) => void
   alert: (id: number, message: string) => void
   zoom: (id: number, delta: number) => void
+  live: (id: number | null) => void
+  snapshot: (id: number, snapshot: Snapshot) => void
 }
 
 interface Retry {
@@ -32,6 +34,11 @@ export class SlotManager {
   private seenSignedIn = new Set<number>()
   private lastFocused: number | null = null
   private probeTimer: NodeJS.Timeout
+  private eco = false
+  private live: number | null = null
+  private frozen = new Set<number>()
+  private snapshotTimer: NodeJS.Timeout | null = null
+  private capturing = new Set<number>()
 
   constructor(
     private win: BrowserWindow,
@@ -83,6 +90,32 @@ export class SlotManager {
     return slots.find((s) => this.views.has(s.id))?.id ?? null
   }
 
+  getLive(): number | null {
+    return this.live
+  }
+
+  setEco(active: boolean, intervalSeconds: number): void {
+    this.eco = active
+    if (this.snapshotTimer) clearInterval(this.snapshotTimer)
+    this.snapshotTimer = active
+      ? setInterval(() => {
+          for (const id of this.frozen) void this.snapshot(id)
+        }, intervalSeconds * 1000)
+      : null
+    if (active && (this.live === null || !this.shownIds().includes(this.live))) {
+      const shown = this.shownIds()
+      this.setLive(this.lastFocused !== null && shown.includes(this.lastFocused) ? this.lastFocused : shown[0] ?? null)
+    }
+    this.applyBounds()
+  }
+
+  setLive(id: number | null): void {
+    if (this.live === id) return
+    this.live = id
+    this.hooks.live(id)
+    this.applyBounds()
+  }
+
   setRects(rects: SlotRects): void {
     this.rects = rects
     this.applyBounds()
@@ -103,8 +136,27 @@ export class SlotManager {
   async capture(id: number): Promise<NativeImage | null> {
     const view = this.views.get(id)
     if (!view || view.webContents.isDestroyed()) return null
-    const image = await view.webContents.capturePage()
+    const image = await view.webContents.capturePage(undefined, { stayHidden: true })
     return image.isEmpty() ? null : image
+  }
+
+  private async snapshot(id: number): Promise<void> {
+    if (this.capturing.has(id)) return
+    this.capturing.add(id)
+    try {
+      const image = await this.capture(id)
+      if (image && this.frozen.has(id)) this.hooks.snapshot(id, { url: `data:image/jpeg;base64,${image.toJPEG(75).toString('base64')}`, at: Date.now() })
+    } catch {
+    } finally {
+      this.capturing.delete(id)
+    }
+  }
+
+  private shownIds(): number[] {
+    return [...this.views.keys()].filter((id) => {
+      const r = this.rects[id]
+      return !!r && r.width >= 2 && r.height >= 2
+    })
   }
 
   async clear(id: number): Promise<void> {
@@ -117,6 +169,7 @@ export class SlotManager {
 
   destroyAll(): void {
     clearInterval(this.probeTimer)
+    if (this.snapshotTimer) clearInterval(this.snapshotTimer)
     for (const id of [...this.views.keys()]) this.destroy(id)
   }
 
@@ -276,9 +329,12 @@ export class SlotManager {
   }
 
   private applyBounds(): void {
+    const shown = this.shownIds()
+    const live = shown.length === 1 ? shown[0] : this.live
+    const frozen = new Set(this.eco ? shown.filter((id) => id !== live) : [])
     for (const [id, view] of this.views) {
       const rect = this.rects[id]
-      if (!rect || this.suspended || rect.width < 2 || rect.height < 2) {
+      if (!rect || rect.width < 2 || rect.height < 2) {
         view.setVisible(false)
         continue
       }
@@ -288,7 +344,10 @@ export class SlotManager {
         width: Math.round(rect.width),
         height: Math.round(rect.height)
       })
-      view.setVisible(true)
+      view.setVisible(!this.suspended && !frozen.has(id))
     }
+    const newlyFrozen = [...frozen].filter((id) => !this.frozen.has(id))
+    this.frozen = frozen
+    for (const id of newlyFrozen) void this.snapshot(id)
   }
 }

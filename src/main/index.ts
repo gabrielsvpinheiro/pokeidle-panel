@@ -1,7 +1,7 @@
-import { app, BrowserWindow, ClipboardItem, Menu, Notification, clipboard, ipcMain, powerSaveBlocker, shell, type MenuItemConstructorOptions } from 'electron'
+import { app, BrowserWindow, ClipboardItem, Menu, Notification, clipboard, ipcMain, powerMonitor, powerSaveBlocker, shell, type MenuItemConstructorOptions } from 'electron'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import { SLOT_COUNT, ZOOM_STEP, type PanelCommand, type UpdateAction, type LayoutConfig, type SlotConfig, type SlotRects } from '@shared/types'
+import { ECO_INTERVALS, SLOT_COUNT, ZOOM_STEP, type EcoState, type PanelCommand, type PanelPrefs, type UpdateAction, type LayoutConfig, type SlotConfig, type SlotRects } from '@shared/types'
 import { flushConfig, loadConfig, saveConfig, sanitizeConfig, type StoredFile } from './config'
 import { SlotManager } from './slots'
 import { Updater } from './updater'
@@ -44,6 +44,26 @@ async function saveScreenshot(id: number): Promise<string | null> {
   return file
 }
 
+function ecoState(): EcoState {
+  const prefs = store.panel.prefs
+  const byBattery = !prefs.eco && prefs.ecoOnBattery && powerMonitor.isOnBatteryPower()
+  return { active: prefs.eco || byBattery, byBattery, live: slots?.getLive() ?? null }
+}
+
+function applyEco(): void {
+  if (!slots) return
+  const state = ecoState()
+  slots.setEco(state.active, store.panel.prefs.ecoInterval)
+  send('panel:eco', ecoState())
+}
+
+function setPrefs(patch: Partial<PanelPrefs>): void {
+  store.panel.prefs = { ...store.panel.prefs, ...patch }
+  persist()
+  buildMenu()
+  applyEco()
+}
+
 function zoomActive(delta: number): void {
   const slot = slots?.activeSlot()
   if (slot !== null && slot !== undefined) command({ type: 'zoom', slot, delta })
@@ -84,22 +104,39 @@ function buildMenu(): void {
         ...focusItems,
         { type: 'separator' },
         {
+          label: 'Eco mode',
+          type: 'checkbox',
+          accelerator: 'CmdOrCtrl+E',
+          checked: store.panel.prefs.eco,
+          click: (item) => setPrefs({ eco: item.checked })
+        },
+        {
+          label: 'Eco mode on battery',
+          type: 'checkbox',
+          checked: store.panel.prefs.ecoOnBattery,
+          click: (item) => setPrefs({ ecoOnBattery: item.checked })
+        },
+        {
+          label: 'Eco refresh',
+          submenu: ECO_INTERVALS.map((n) => ({
+            label: `Every ${n} seconds`,
+            type: 'radio' as const,
+            checked: store.panel.prefs.ecoInterval === n,
+            click: () => setPrefs({ ecoInterval: n })
+          }))
+        },
+        { type: 'separator' },
+        {
           label: 'Auto-recover stuck accounts',
           type: 'checkbox',
           checked: store.panel.prefs.autoReload,
-          click: (item) => {
-            store.panel.prefs.autoReload = item.checked
-            persist()
-          }
+          click: (item) => setPrefs({ autoReload: item.checked })
         },
         {
           label: 'Desktop notifications',
           type: 'checkbox',
           checked: store.panel.prefs.notifications,
-          click: (item) => {
-            store.panel.prefs.notifications = item.checked
-            persist()
-          }
+          click: (item) => setPrefs({ notifications: item.checked })
         }
       ]
     },
@@ -148,7 +185,9 @@ function createWindow(): void {
   slots = new SlotManager(win, () => store.panel, {
     status: (id, status, since) => send('panel:status', id, status, since),
     alert,
-    zoom: (slot, delta) => command({ type: 'zoom', slot, delta })
+    zoom: (slot, delta) => command({ type: 'zoom', slot, delta }),
+    live: () => send('panel:eco', ecoState()),
+    snapshot: (id, snapshot) => send('panel:snapshot', id, snapshot)
   })
 
   const saveBounds = (): void => {
@@ -175,7 +214,7 @@ function createWindow(): void {
   if (process.env.ELECTRON_RENDERER_URL) void win.loadURL(process.env.ELECTRON_RENDERER_URL)
   else void win.loadFile(join(__dirname, '../renderer/index.html'))
 
-  win.webContents.once('did-finish-load', () => void slots.sync())
+  win.webContents.once('did-finish-load', () => void slots.sync().then(applyEco))
 }
 
 function registerIpc(): void {
@@ -184,8 +223,13 @@ function registerIpc(): void {
     statuses: slots.getStatuses(),
     since: slots.getSince(),
     version: app.getVersion(),
-    update: updater.getState()
+    update: updater.getState(),
+    eco: ecoState()
   }))
+  ipcMain.handle('panel:set-prefs', (_e, patch: Partial<PanelPrefs>) => setPrefs(patch))
+  ipcMain.on('panel:set-live', (_e, id: number) => {
+    if (Number.isInteger(id) && id >= 0 && id < SLOT_COUNT) slots.setLive(id)
+  })
   ipcMain.on('panel:update-action', (_e, action: UpdateAction) => {
     if (action === 'check') void updater.check(true)
     else if (action === 'install') updater.install()
@@ -229,6 +273,8 @@ app.whenReady().then(() => {
   store = loadConfig()
   if (process.platform === 'darwin' && !app.isPackaged) app.dock?.setIcon(join(__dirname, '../../build/icon.png'))
   powerSaveBlocker.start('prevent-app-suspension')
+  powerMonitor.on('on-battery', applyEco)
+  powerMonitor.on('on-ac', applyEco)
   buildMenu()
   createWindow()
   updater = new Updater((state) => send('panel:update-state', state))

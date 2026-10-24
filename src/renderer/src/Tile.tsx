@@ -1,7 +1,7 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
-import { ZOOM_MAX, ZOOM_MIN, ZOOM_STEP, type SlotConfig, type SlotStatus } from '@shared/types'
+import { ZOOM_MAX, ZOOM_MIN, ZOOM_STEP, type SlotConfig, type SlotStatus, type Snapshot } from '@shared/types'
 import { Ball } from './Ball'
-import { IconCamera, IconExpand, IconGrid, IconMute, IconReload, IconSettings, IconSound, IconZoomIn, IconZoomOut } from './Icons'
+import { IconCamera, IconExpand, IconLeaf, IconGrid, IconMute, IconReload, IconSettings, IconSound, IconZoomIn, IconZoomOut } from './Icons'
 
 const STATUS_LABEL: Record<SlotStatus, string> = {
   idle: 'Empty',
@@ -39,6 +39,11 @@ function ActionButton(props: {
   )
 }
 
+function formatAgo(ms: number): string {
+  const seconds = Math.max(0, Math.round(ms / 1000))
+  return seconds < 60 ? `${seconds}s ago` : `${Math.floor(seconds / 60)}m ago`
+}
+
 export function formatDuration(ms: number): string {
   const minutes = Math.floor(ms / 60_000)
   if (minutes < 1) return 'just now'
@@ -64,6 +69,10 @@ interface Props {
   onGripPointerDown?: (e: ReactPointerEvent<HTMLElement>) => void
   onRename: (name: string) => void
   onScreenshot: () => Promise<string | null>
+  frozen: boolean
+  snapshot: Snapshot | null
+  now: number
+  onWake: () => void
   moveState: 'source' | 'target' | 'idle' | null
   onSettings: () => void
   onActivate: () => void
@@ -209,6 +218,15 @@ export function Tile(p: Props) {
         />
       </div>
       <div className="tile-body" ref={slot.enabled ? p.registerContent : undefined}>
+        {p.frozen && !p.moveState && (
+          <button className="eco-frame" onClick={p.onWake} title="Eco mode: click to make this account live">
+            {p.snapshot && <img src={p.snapshot.url} alt="" draggable={false} />}
+            <span className="eco-badge">
+              <IconLeaf />
+              {p.snapshot ? `Eco · updated ${formatAgo(p.now - p.snapshot.at)} · click to play` : 'Eco · click to play'}
+            </span>
+          </button>
+        )}
         {p.moveState && (
           <div className="move-overlay">
             {p.moveState === 'source' ? 'Moving this account…' : p.moveState === 'target' ? 'Drop to swap places' : slot.name}

@@ -43,6 +43,9 @@ export const IconCamera = () => (
 export const IconKeyboard = () => (
   <svg {...base}><rect x="2" y="6" width="20" height="12" rx="2" /><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8" /></svg>
 )
+export const IconLeaf = () => (
+  <svg {...base}><path d="M5 19c0-8 5-14 15-15-1 10-7 15-15 15z" /><path d="M5 19 13 11" /></svg>
+)
 export const IconDownload = () => (
   <svg {...base}><path d="M12 3v12M7 10l5 5 5-5M5 21h14" /></svg>
 )

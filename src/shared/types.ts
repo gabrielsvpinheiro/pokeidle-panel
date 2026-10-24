@@ -30,9 +30,26 @@ export interface LayoutConfig {
   rowRatios: [number, number]
 }
 
+export const ECO_INTERVALS = [5, 15, 30, 60] as const
+export type EcoInterval = (typeof ECO_INTERVALS)[number]
+
 export interface PanelPrefs {
   autoReload: boolean
   notifications: boolean
+  eco: boolean
+  ecoOnBattery: boolean
+  ecoInterval: EcoInterval
+}
+
+export interface EcoState {
+  active: boolean
+  byBattery: boolean
+  live: number | null
+}
+
+export interface Snapshot {
+  url: string
+  at: number
 }
 
 export interface PanelConfig {
@@ -76,7 +93,12 @@ export interface PanelApi {
     since: Record<number, number>
     version: string
     update: UpdateState
+    eco: EcoState
   }>
+  setPrefs(patch: Partial<PanelPrefs>): Promise<void>
+  setLive(id: number): void
+  onEco(cb: (state: EcoState) => void): () => void
+  onSnapshot(cb: (id: number, snapshot: Snapshot) => void): () => void
   updateAction(action: UpdateAction): void
   onUpdate(cb: (state: UpdateState) => void): () => void
   updateSlot(id: number, patch: Partial<Omit<SlotConfig, 'id'>>): Promise<void>

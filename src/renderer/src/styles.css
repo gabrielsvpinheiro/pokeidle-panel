@@ -252,3 +252,24 @@ kbd {
   background: var(--panel-2); border: 1px solid var(--line); border-bottom-width: 2px;
   font: 600 11px -apple-system, 'Segoe UI', system-ui, sans-serif; color: var(--text); white-space: nowrap;
 }
+
+.eco-btn {
+  display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px;
+  background: #12141dcc; border: 2px solid #12141d; border-radius: 999px; color: #fff; font-weight: 700;
+}
+.eco-btn:hover { background: #12141d; }
+.eco-btn.active { background: #3ddc84; color: #0d2a19; border-color: #0d2a19; }
+.eco-btn:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+.eco-frame {
+  position: absolute; inset: 0; padding: 0; border: 0; cursor: pointer;
+  background: #0b0c12; overflow: hidden;
+}
+.eco-frame img { width: 100%; height: 100%; object-fit: cover; object-position: top left; display: block; filter: saturate(.85); }
+.eco-frame:hover img { filter: none; }
+.eco-badge {
+  position: absolute; left: 10px; bottom: 10px;
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px;
+  background: #0d2a19e6; color: #9ff0c3; border: 1px solid #3ddc8466; border-radius: 999px;
+  font-size: 11px; font-weight: 600;
+}
+.eco-frame:hover .eco-badge { background: #3ddc84; color: #0d2a19; }

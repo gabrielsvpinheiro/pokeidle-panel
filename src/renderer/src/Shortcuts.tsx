@@ -8,6 +8,7 @@ const ROWS: [string[], string][] = [
   [[`${MOD} 0`], 'Back to the grid'],
   [[`${MOD} +`, `${MOD} −`], 'Zoom in / out the last clicked account'],
   [['Ctrl', 'mouse wheel'], 'Zoom inside a game'],
+  [[`${MOD} E`], 'Turn Eco mode on or off'],
   [[`${MOD} /`], 'Show this list'],
   [['Double-click name'], 'Rename an account'],
   [['Drag name'], 'Swap two accounts'],
